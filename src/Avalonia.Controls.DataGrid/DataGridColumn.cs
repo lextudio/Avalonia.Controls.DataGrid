@@ -20,6 +20,7 @@ using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using System.Reflection;
+using Avalonia;
 
 namespace Avalonia.Controls
 {
@@ -991,6 +992,7 @@ namespace Avalonia.Controls
                 _ => "Filter..."
             };
         }
+
 
         /// <summary>
         /// Ensures that this column's width has been coerced to a valid value.

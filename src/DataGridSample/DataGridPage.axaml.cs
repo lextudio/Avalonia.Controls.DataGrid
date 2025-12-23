@@ -17,11 +17,16 @@ using System;
 using Avalonia.Layout;
 using Avalonia.Interactivity;
 using Avalonia.Input;
+using System.Globalization;
+using Avalonia.VisualTree;
 
 namespace DataGridSample
 {
     public partial class DataGridPage : UserControl
     {
+        private bool _ignoreFlagTextChange;
+        private bool _ignoreFlagCheckChange;
+
         public DataGridPage()
         {
             this.InitializeComponent();
@@ -229,6 +234,171 @@ namespace DataGridSample
                 var itemText = hit.Item?.ToString() ?? "(null)";
                 this.Get<TextBlock>("HitTestInfo").Text = $"Cell: {col}, Item: {itemText}";
             }
+        }
+
+        private void OnOffsetFilterChanged(object? sender, TextChangedEventArgs e)
+        {
+            var text = (sender as TextBox)?.Text;
+            if (FindHeader(sender) is { } header)
+            {
+                header.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+            }
+            else if (GetOffsetColumn() is { } column)
+            {
+                column.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+            }
+        }
+
+        private void OnClearOffsetFilter(object? sender, RoutedEventArgs e)
+        {
+            if (FindHeader(sender) is { } header)
+            {
+                header.FilterValue = null;
+            }
+            else if (GetOffsetColumn() is { } column)
+            {
+                column.FilterValue = null;
+            }
+        }
+
+        private void OnFlagsFilterChanged(object? sender, TextChangedEventArgs e)
+        {
+            if (_ignoreFlagTextChange)
+                return;
+            var text = (sender as TextBox)?.Text ?? string.Empty;
+            ApplyFlagsFilter(text, FindHeader(sender), syncCheckBoxes: true);
+        }
+
+        private void OnFlagCheckChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_ignoreFlagCheckChange)
+                return;
+
+            var header = FindHeader(sender);
+            var mask = GetFlagsMaskFromCheckBoxes(header);
+            var text = mask == 0 ? string.Empty : $"0x{mask:X}";
+            _ignoreFlagTextChange = true;
+            if (sender is Control c)
+            {
+                var box = c.FindAncestorOfType<DataGridColumnHeader>()?
+                    .GetVisualDescendants()
+                    .OfType<TextBox>()
+                    .FirstOrDefault();
+                if (box != null)
+                    box.Text = text;
+            }
+            _ignoreFlagTextChange = false;
+            ApplyFlagsFilter(text, header, syncCheckBoxes: false);
+        }
+
+        private void OnClearFlagsFilter(object? sender, RoutedEventArgs e)
+        {
+            var header = FindHeader(sender);
+            _ignoreFlagTextChange = true;
+            if (header != null)
+            {
+                foreach (var tb in header.GetVisualDescendants().OfType<TextBox>())
+                {
+                    tb.Text = string.Empty;
+                }
+            }
+            _ignoreFlagTextChange = false;
+            ApplyFlagsFilter(string.Empty, header, syncCheckBoxes: true);
+        }
+
+        private void ApplyFlagsFilter(string text, DataGridColumnHeader? header, bool syncCheckBoxes)
+        {
+            if (header != null)
+            {
+                header.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+                if (syncCheckBoxes && TryParseMask(text, out var mask))
+                {
+                    UpdateFlagCheckBoxes(header, mask);
+                }
+                else if (syncCheckBoxes && string.IsNullOrWhiteSpace(text))
+                {
+                    UpdateFlagCheckBoxes(header, 0);
+                }
+                return;
+            }
+
+            var column = GetFlagsColumn();
+            if (column == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                column.FilterValue = null;
+                return;
+            }
+
+            column.FilterValue = text;
+        }
+
+        private void UpdateFlagCheckBoxes(DataGridColumnHeader header, int mask)
+        {
+            _ignoreFlagCheckChange = true;
+            foreach (var cb in header.GetVisualDescendants().OfType<CheckBox>())
+            {
+                if (cb.Tag is string tag && int.TryParse(tag, out var bit))
+                {
+                    cb.IsChecked = (mask & bit) == bit;
+                }
+                else if (cb.Tag is int bitValue)
+                {
+                    cb.IsChecked = (mask & bitValue) == bitValue;
+                }
+            }
+            _ignoreFlagCheckChange = false;
+        }
+
+        private int GetFlagsMaskFromCheckBoxes(DataGridColumnHeader? header)
+        {
+            if (header == null)
+                return 0;
+            int mask = 0;
+            foreach (var cb in header.GetVisualDescendants().OfType<CheckBox>())
+            {
+                if (cb.IsChecked == true && cb.Tag is string tag && int.TryParse(tag, out var bit))
+                {
+                    mask |= bit;
+                }
+                else if (cb.IsChecked == true && cb.Tag is int bitValue)
+                {
+                    mask |= bitValue;
+                }
+            }
+            return mask;
+        }
+
+        private bool TryParseMask(string text, out int mask)
+        {
+            mask = 0;
+            var trimmed = text?.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+                return false;
+            if (trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                return int.TryParse(trimmed[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out mask);
+            }
+            return int.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out mask);
+        }
+
+        private DataGridColumn? GetOffsetColumn() => GetFilterColumn(2);
+
+        private DataGridColumn? GetFlagsColumn() => GetFilterColumn(3);
+
+        private DataGridColumn? GetFilterColumn(int index)
+        {
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            if (index < 0 || index >= dg.Columns.Count)
+                return null;
+            return dg.Columns[index];
+        }
+
+        private DataGridColumnHeader? FindHeader(object? sender)
+        {
+            return (sender as Control)?.FindAncestorOfType<DataGridColumnHeader>();
         }
     }
 }

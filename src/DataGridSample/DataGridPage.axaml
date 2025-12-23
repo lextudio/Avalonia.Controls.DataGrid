@@ -154,7 +154,7 @@
         <DockPanel Margin="12">
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
             <TextBlock VerticalAlignment="Center" Text="Row index:"/>
-            <NumericUpDown x:Name="FilterDemoIndex" Minimum="0" Maximum="100" Width="120" Value="5"/>
+            <NumericUpDown x:Name="FilterDemoIndex" Minimum="0" Maximum="100" Width="140" Value="5"/>
             <Button Content="Scroll Into View" Click="OnScrollFilterDemo"/>
             <Button Content="Select Item" Click="OnSelectFilterDemo"/>
           </StackPanel>
@@ -164,9 +164,46 @@
               <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
               <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
               <DataGridTextColumn Header="Offset (try 0x20 or 32)" Binding="{Binding OffsetHex}" Width="*"
-                                  FilterKind="Hex"/>
+                                  FilterKind="Hex">
+                <DataGridTextColumn.HeaderTemplate>
+                  <DataTemplate>
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Offset (hex or dec)" />
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBox Width="140"
+                                 Watermark="0x20 or 32"
+                                 Text="{Binding FilterValue, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Mode=TwoWay}"
+                                 TextChanged="OnOffsetFilterChanged"/>
+                        <Button Content="Clear" Click="OnClearOffsetFilter"/>
+                      </StackPanel>
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTextColumn.HeaderTemplate>
+              </DataGridTextColumn>
               <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="*"
-                                  FilterKind="Flags"/>
+                                  FilterKind="Flags">
+                <DataGridTextColumn.HeaderTemplate>
+                  <DataTemplate>
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Flags (bitmask)" />
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBox Width="140"
+                                 Watermark="0x3 or 3"
+                                 Text="{Binding FilterValue, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Mode=TwoWay}"
+                                 TextChanged="OnFlagsFilterChanged"/>
+                        <Button Content="Clear" Click="OnClearFlagsFilter"/>
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock VerticalAlignment="Center" Text="Quick bits:"/>
+                        <CheckBox Content="0x1" Tag="1" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
+                        <CheckBox Content="0x2" Tag="2" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
+                        <CheckBox Content="0x4" Tag="4" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
+                        <CheckBox Content="0x8" Tag="8" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
+                      </StackPanel>
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTextColumn.HeaderTemplate>
+              </DataGridTextColumn>
               <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
             </DataGrid.Columns>
           </DataGrid>

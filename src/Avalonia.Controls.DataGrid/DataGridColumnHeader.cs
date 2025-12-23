@@ -80,6 +80,9 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<string> FilterHintProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, string>(nameof(FilterHint));
 
+        public static readonly StyledProperty<IDataTemplate> FilterControlTemplateProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, IDataTemplate>(nameof(FilterControlTemplate));
+
         public bool AreSeparatorsVisible
         {
             get { return GetValue(AreSeparatorsVisibleProperty); }
@@ -102,6 +105,12 @@ namespace Avalonia.Controls
         {
             get => GetValue(FilterHintProperty);
             set => SetValue(FilterHintProperty, value);
+        }
+
+        public IDataTemplate FilterControlTemplate
+        {
+            get => GetValue(FilterControlTemplateProperty);
+            set => SetValue(FilterControlTemplateProperty, value);
         }
 
         static DataGridColumnHeader()
