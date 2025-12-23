@@ -151,17 +151,26 @@
       </TabItem>
 
       <TabItem Header="Filters (Hex &amp; Flags)">
-        <DataGrid Name="dataGridFilters" Margin="12" IsFilterRowVisible="True">
-          <DataGrid.Columns>
-            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-            <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
-            <DataGridTextColumn Header="Offset (try 0x20 or 32)" Binding="{Binding OffsetHex}" Width="*"
-                                FilterKind="Hex"/>
-            <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="*"
-                                FilterKind="Flags"/>
-            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
-          </DataGrid.Columns>
-        </DataGrid>
+        <DockPanel Margin="12">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock VerticalAlignment="Center" Text="Row index:"/>
+            <NumericUpDown x:Name="FilterDemoIndex" Minimum="0" Maximum="100" Width="120" Value="5"/>
+            <Button Content="Scroll Into View" Click="OnScrollFilterDemo"/>
+            <Button Content="Select Item" Click="OnSelectFilterDemo"/>
+          </StackPanel>
+          <TextBlock DockPanel.Dock="Top" x:Name="HitTestInfo" Margin="0,0,0,8" Text="Click a cell to see hit info."/>
+          <DataGrid Name="dataGridFilters" IsFilterRowVisible="True" PointerPressed="OnFiltersPointerPressed">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+              <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
+              <DataGridTextColumn Header="Offset (try 0x20 or 32)" Binding="{Binding OffsetHex}" Width="*"
+                                  FilterKind="Hex"/>
+              <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="*"
+                                  FilterKind="Flags"/>
+              <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
       </TabItem>
     </TabControl>
   </Grid>

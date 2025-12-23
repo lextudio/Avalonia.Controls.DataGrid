@@ -3466,6 +3466,59 @@ namespace Avalonia.Controls
             }
         }
 
+        /// <summary>
+        /// Scrolls the specified item into view if present.
+        /// </summary>
+        public bool ScrollIntoView(object item)
+        {
+            if (item == null || DataConnection == null)
+                return false;
+
+            int rowIndex = DataConnection.IndexOf(item);
+            if (rowIndex < 0)
+                return false;
+
+            int slot = SlotFromRowIndex(rowIndex);
+            var firstCol = ColumnsInternal.FirstVisibleColumn;
+            if (firstCol == null)
+                return false;
+
+            return ScrollSlotIntoView(firstCol.Index, slot, forCurrentCellChange: false, forceHorizontalScroll: true);
+        }
+
+        /// <summary>
+        /// Selects the specified item and optionally scrolls it into view.
+        /// </summary>
+        public bool SelectItem(object item, bool scrollIntoView = true)
+        {
+            if (item == null)
+                return false;
+
+            if (scrollIntoView)
+            {
+                ScrollIntoView(item);
+            }
+
+            SelectedItem = item;
+            return true;
+        }
+
+        /// <summary>
+        /// Performs a hit test and returns the DataGridCell and related info at the given point (relative to the grid).
+        /// </summary>
+        public DataGridCellHitTestResult HitTestCell(Point point)
+        {
+            var hit = this.GetVisualAt(point);
+            if (hit == null)
+                return default;
+
+            var cell = (hit as DataGridCell) ?? hit.GetVisualAncestors().OfType<DataGridCell>().FirstOrDefault();
+            if (cell == null)
+                return default;
+
+            return new DataGridCellHitTestResult(cell, cell.DataContext, cell.OwningColumn);
+        }
+
         internal IDataTemplate GetRowDetailsTemplateForItem(object dataItem, IDataTemplate rowTemplate)
         {
             if (rowTemplate != null)

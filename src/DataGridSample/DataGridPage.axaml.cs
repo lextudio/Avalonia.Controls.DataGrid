@@ -15,6 +15,8 @@ using Avalonia.Media;
 using Avalonia;
 using System;
 using Avalonia.Layout;
+using Avalonia.Interactivity;
+using Avalonia.Input;
 
 namespace DataGridSample
 {
@@ -99,6 +101,7 @@ namespace DataGridSample
 
             var dgFilters = this.Get<DataGrid>("dataGridFilters");
             dgFilters.ItemsSource = BuildFilterDemoItems();
+            dgFilters.AddHandler(InputElement.PointerPressedEvent, OnFiltersPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
 
             DataContext = this;
         }
@@ -186,6 +189,46 @@ namespace DataGridSample
                 });
             }
             return items;
+        }
+
+        private void OnScrollFilterDemo(object? sender, RoutedEventArgs e)
+        {
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            var idx = (int)(this.Get<NumericUpDown>("FilterDemoIndex").Value ?? 0);
+            var item = (dg.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().Skip(idx).FirstOrDefault();
+            if (item != null)
+            {
+                dg.ScrollIntoView(item);
+            }
+        }
+
+        private void OnSelectFilterDemo(object? sender, RoutedEventArgs e)
+        {
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            var idx = (int)(this.Get<NumericUpDown>("FilterDemoIndex").Value ?? 0);
+            var item = (dg.ItemsSource as System.Collections.IEnumerable)?.Cast<object>().Skip(idx).FirstOrDefault();
+            if (item != null)
+            {
+                dg.SelectItem(item);
+            }
+        }
+
+        private void OnFiltersPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (sender is not DataGrid dg)
+                return;
+            var point = e.GetPosition(dg);
+            var hit = dg.HitTestCell(point);
+            if (hit.IsEmpty)
+            {
+                this.Get<TextBlock>("HitTestInfo").Text = "Click a cell to see hit info.";
+            }
+            else
+            {
+                var col = hit.Column?.Header?.ToString() ?? "(no column)";
+                var itemText = hit.Item?.ToString() ?? "(null)";
+                this.Get<TextBlock>("HitTestInfo").Text = $"Cell: {col}, Item: {itemText}";
+            }
         }
     }
 }
