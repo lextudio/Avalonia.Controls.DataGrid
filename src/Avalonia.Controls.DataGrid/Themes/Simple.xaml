@@ -88,7 +88,7 @@
                          HorizontalAlignment="Stretch"
                          IsVisible="{TemplateBinding IsFilterRowVisible}"
                          Text="{TemplateBinding FilterValue, Mode=TwoWay}"
-                         Watermark="Filter..." />
+                         Watermark="{TemplateBinding FilterHint}" />
               </StackPanel>
 
               <Rectangle Name="VerticalSeparator"

@@ -937,6 +937,7 @@ namespace Avalonia.Controls
                     Path = nameof(FilterValue),
                     Mode = BindingMode.TwoWay
                 });
+            result.FilterHint = GetDefaultFilterHint(FilterKind);
             if (OwningGrid != null)
             {
                 result.Bind(DataGridColumnHeader.IsFilterRowVisibleProperty,
@@ -979,6 +980,16 @@ namespace Avalonia.Controls
         {
             get => GetValue(FilterKindProperty);
             set => SetValue(FilterKindProperty, value);
+        }
+
+        private static string GetDefaultFilterHint(DataGridFilterKind kind)
+        {
+            return kind switch
+            {
+                DataGridFilterKind.Hex => "Hex or decimal (e.g. 0x20, 32)",
+                DataGridFilterKind.Flags => "Bitmask (e.g. 4 => bit 2 set)",
+                _ => "Filter..."
+            };
         }
 
         /// <summary>
