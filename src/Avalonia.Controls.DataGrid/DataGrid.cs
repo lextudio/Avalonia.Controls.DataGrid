@@ -652,6 +652,12 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<bool> AutoGenerateColumnsProperty =
             AvaloniaProperty.Register<DataGrid, bool>(nameof(AutoGenerateColumns));
 
+        public static readonly StyledProperty<Func<object, IDataTemplate>> RowDetailsTemplateSelectorProperty =
+            AvaloniaProperty.Register<DataGrid, Func<object, IDataTemplate>>(nameof(RowDetailsTemplateSelector));
+
+        public static readonly StyledProperty<Func<object, bool>> RowDetailsVisibilitySelectorProperty =
+            AvaloniaProperty.Register<DataGrid, Func<object, bool>>(nameof(RowDetailsVisibilitySelector));
+
         /// <summary>
         /// Gets or sets a value that indicates whether columns are created
         /// automatically when the <see cref="P:Avalonia.Controls.DataGrid.ItemsSource" /> property is set.
@@ -660,6 +666,24 @@ namespace Avalonia.Controls
         {
             get { return GetValue(AutoGenerateColumnsProperty); }
             set { SetValue(AutoGenerateColumnsProperty, value); }
+        }
+
+        /// <summary>
+        /// Optional selector that picks a per-item RowDetails template. Avalonia fork extension.
+        /// </summary>
+        public Func<object, IDataTemplate> RowDetailsTemplateSelector
+        {
+            get => GetValue(RowDetailsTemplateSelectorProperty);
+            set => SetValue(RowDetailsTemplateSelectorProperty, value);
+        }
+
+        /// <summary>
+        /// Optional selector to control per-item RowDetails visibility. Avalonia fork extension.
+        /// </summary>
+        public Func<object, bool> RowDetailsVisibilitySelector
+        {
+            get => GetValue(RowDetailsVisibilitySelectorProperty);
+            set => SetValue(RowDetailsVisibilitySelectorProperty, value);
         }
 
         /// <summary>
@@ -774,6 +798,8 @@ namespace Avalonia.Controls
             AreRowGroupHeadersFrozenProperty.Changed.AddClassHandler<DataGrid>((x, e) => x.OnAreRowGroupHeadersFrozenChanged(e));
             RowDetailsTemplateProperty.Changed.AddClassHandler<DataGrid>((x, e) => x.OnRowDetailsTemplateChanged(e));
             RowDetailsVisibilityModeProperty.Changed.AddClassHandler<DataGrid>((x, e) => x.OnRowDetailsVisibilityModeChanged(e));
+            RowDetailsTemplateSelectorProperty.Changed.AddClassHandler<DataGrid>((x, e) => x.OnRowDetailsTemplateSelectorChanged(e));
+            RowDetailsVisibilitySelectorProperty.Changed.AddClassHandler<DataGrid>((x, e) => x.OnRowDetailsVisibilitySelectorChanged(e));
             AutoGenerateColumnsProperty.Changed.AddClassHandler<DataGrid>((x, e) => x.OnAutoGenerateColumnsChanged(e));
 
             FocusableProperty.OverrideDefaultValue<DataGrid>(true);
@@ -841,6 +867,27 @@ namespace Avalonia.Controls
         private void OnRowDetailsVisibilityModeChanged(AvaloniaPropertyChangedEventArgs e)
         {
             UpdateRowDetailsVisibilityMode((DataGridRowDetailsVisibilityMode)e.NewValue);
+        }
+
+        private void OnRowDetailsTemplateSelectorChanged(AvaloniaPropertyChangedEventArgs e)
+        {
+            OnRowDetailsTemplateChanged(e);
+        }
+
+        private void OnRowDetailsVisibilitySelectorChanged(AvaloniaPropertyChangedEventArgs e)
+        {
+            if (_rowsPresenter != null)
+            {
+                _showDetailsTable.Clear();
+                foreach (DataGridRow row in GetAllRows())
+                {
+                    row.SetDetailsVisibilityInternal(GetRowDetailsVisibility(row.Index), raiseNotification: true, animate: false);
+                }
+            }
+            OnRowDetailsChanged();
+            UpdateRowDetailsHeightEstimate();
+            InvalidateRowsMeasure(false);
+            InvalidateMeasure();
         }
 
         private void OnRowDetailsTemplateChanged(AvaloniaPropertyChangedEventArgs e)
@@ -3386,6 +3433,33 @@ namespace Avalonia.Controls
                 // since rows could be added or removed
                 InvalidateMeasure();
             }
+        }
+
+        internal IDataTemplate GetRowDetailsTemplateForItem(object dataItem, IDataTemplate rowTemplate)
+        {
+            if (rowTemplate != null)
+            {
+                return rowTemplate;
+            }
+
+            var selector = RowDetailsTemplateSelector;
+            if (selector != null)
+            {
+                try
+                {
+                    var template = selector(dataItem);
+                    if (template != null)
+                    {
+                        return template;
+                    }
+                }
+                catch
+                {
+                    // Swallow selector exceptions to avoid crashing the grid; fall back to default template.
+                }
+            }
+
+            return RowDetailsTemplate;
         }
 
         private static void NotifyDataContextPropertyForAllRowCells(IEnumerable<DataGridRow> rowSource, bool arg2)

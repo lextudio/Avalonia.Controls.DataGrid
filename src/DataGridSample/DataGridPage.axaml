@@ -44,10 +44,20 @@
                     Value="200"/>
             <CheckBox x:Name="FilterToggle" IsChecked="True" Content="Show Filter Row"
                       ToolTip.Tip="Toggle the per-column filter TextBoxes added in the fork."/>
+            <CheckBox x:Name="ShowDetailsToggle" IsChecked="True" Content="Show Row Details"/>
+            <TextBlock Text="Details if GDP ≥" VerticalAlignment="Center"/>
+            <NumericUpDown x:Name="DetailsThreshold"
+                           Width="160"
+                           HorizontalContentAlignment="Stretch"
+                           Minimum="0"
+                           Maximum="50000"
+                           Increment="1000"
+                           Value="15000"/>
           </StackPanel>
           <DataGrid Name="dataGrid1" Margin="12" CanUserResizeColumns="True" CanUserReorderColumns="True" CanUserSortColumns="True" HeadersVisibility="All"
                     RowBackground="#1000"
-                    IsFilterRowVisible="{Binding #FilterToggle.IsChecked}">
+                    IsFilterRowVisible="{Binding #FilterToggle.IsChecked}"
+                    RowDetailsVisibilityMode="Visible">
             <DataGrid.Styles>
               <Style Selector="DataGridRow">
                 <Setter Property="Header" Value="{Binding $self.Index}"/>

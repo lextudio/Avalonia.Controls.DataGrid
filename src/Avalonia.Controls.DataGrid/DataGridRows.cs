@@ -3014,7 +3014,19 @@ namespace Avalonia.Controls
         internal bool GetRowDetailsVisibility(int rowIndex, DataGridRowDetailsVisibilityMode gridLevelRowDetailsVisibility)
         {
             Debug.Assert(rowIndex != -1);
-            if (_showDetailsTable.Contains(rowIndex))
+            if (RowDetailsVisibilitySelector != null)
+            {
+                try
+                {
+                    var item = DataConnection.GetDataItem(rowIndex);
+                    return RowDetailsVisibilitySelector(item);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            else if (_showDetailsTable.Contains(rowIndex))
             {
                 // The user explicity set DetailsVisibility on a row so we should respect that
                 return _showDetailsTable.GetValueAt(rowIndex);

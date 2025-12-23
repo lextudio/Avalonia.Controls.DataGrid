@@ -805,7 +805,7 @@ namespace Avalonia.Controls
             get
             {
                 Debug.Assert(OwningGrid != null);
-                return DetailsTemplate ?? OwningGrid.RowDetailsTemplate;
+                return OwningGrid.GetRowDetailsTemplateForItem(DataContext, DetailsTemplate);
             }
         }
 

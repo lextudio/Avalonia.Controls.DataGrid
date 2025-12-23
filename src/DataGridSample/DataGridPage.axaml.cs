@@ -10,6 +10,11 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Threading;
 using DataGridSample.Models;
+using Avalonia.Controls.Templates;
+using Avalonia.Media;
+using Avalonia;
+using System;
+using Avalonia.Layout;
 
 namespace DataGridSample
 {
@@ -36,6 +41,39 @@ namespace DataGridSample
                 }
             };
             dg1.ItemsSource = collectionView1;
+            dg1.RowDetailsTemplateSelector = CreateCountryDetailsTemplate();
+
+            var showDetailsToggle = this.Get<CheckBox>("ShowDetailsToggle");
+            var detailsThreshold = this.Get<NumericUpDown>("DetailsThreshold");
+            void RebindVisibilitySelector()
+            {
+                var enabled = showDetailsToggle.IsChecked == true;
+                dg1.RowDetailsVisibilityMode = enabled
+                    ? DataGridRowDetailsVisibilityMode.Visible
+                    : DataGridRowDetailsVisibilityMode.Collapsed;
+                if (!enabled)
+                {
+                    dg1.RowDetailsVisibilitySelector = null;
+                    return;
+                }
+
+                // Force property change even if the lambda would be reference-equal
+                dg1.RowDetailsVisibilitySelector = null;
+                dg1.RowDetailsVisibilitySelector = item =>
+                {
+                    if (item is Country c)
+                    {
+                        var threshold = detailsThreshold.Value;
+                        if (threshold == null)
+                            return false;
+                        return c.GDP >= threshold.Value;
+                    }
+                    return false;
+                };
+            }
+            showDetailsToggle.IsCheckedChanged += (_, __) => RebindVisibilitySelector();
+            detailsThreshold.ValueChanged += (_, __) => RebindVisibilitySelector();
+            RebindVisibilitySelector();
 
             var dg2 = this.Get<DataGrid>("dataGridGrouping");
             dg2.IsReadOnly = true;
@@ -96,6 +134,36 @@ namespace DataGridSample
                     textBox.SelectAll();
                 }, DispatcherPriority.Loaded);
             }
+        }
+
+        private Func<object, IDataTemplate> CreateCountryDetailsTemplate()
+        {
+            return item =>
+            {
+                if (item is Country)
+                {
+                    return new FuncDataTemplate<Country>((country, _) =>
+                    {
+                        var stack = new StackPanel
+                        {
+                            Orientation = Orientation.Vertical,
+                            Spacing = 4
+                        };
+                        stack.Children.Add(new TextBlock { Text = $"Region: {country.Region}" });
+                        stack.Children.Add(new TextBlock { Text = $"Population: {country.Population:n0}" });
+                        stack.Children.Add(new TextBlock { Text = $"GDP: {country.GDP:n0}" });
+                        stack.Children.Add(new TextBlock { Text = $"Literacy: {country.LiteracyPercent:0.0}%"} );
+                        return new Border
+                        {
+                            Background = Brushes.LightGray,
+                            CornerRadius = new CornerRadius(4),
+                            Padding = new Thickness(8),
+                            Child = stack
+                        };
+                    }, true);
+                }
+                return null!;
+            };
         }
     }
 }
