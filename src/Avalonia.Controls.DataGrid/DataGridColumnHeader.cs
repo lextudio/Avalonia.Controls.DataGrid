@@ -14,6 +14,8 @@ using Avalonia.Collections;
 using Avalonia.Controls.Automation.Peers;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Mixins;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Shapes;
 using Avalonia.Controls.Templates;
 using Avalonia.Controls.Utils;
@@ -56,6 +58,8 @@ namespace Avalonia.Controls
         private static DataGridColumn _dragColumn;
         private static double _frozenColumnsWidth;
         private static Lazy<Cursor> _resizeCursor = new Lazy<Cursor>(() => new Cursor(StandardCursorType.SizeWestEast));
+        private TextBox _defaultFilterBox;
+        private ContentPresenter _customFilterPresenter;
 
         public static readonly StyledProperty<IBrush> SeparatorBrushProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, IBrush>(nameof(SeparatorBrush));
@@ -116,6 +120,8 @@ namespace Avalonia.Controls
         static DataGridColumnHeader()
         {
             AreSeparatorsVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnAreSeparatorsVisibleChanged(e));
+            FilterControlTemplateProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
+            IsFilterRowVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
             PressedMixin.Attach<DataGridColumnHeader>();
             IsTabStopProperty.OverrideDefaultValue<DataGridColumnHeader>(false);
             AutomationProperties.IsOffscreenBehaviorProperty.OverrideDefaultValue<DataGridColumnHeader>(IsOffscreenBehavior.FromClip);
@@ -132,6 +138,38 @@ namespace Avalonia.Controls
             PointerMoved += DataGridColumnHeader_PointerMoved;
             PointerEntered += DataGridColumnHeader_PointerEntered;
             PointerExited += DataGridColumnHeader_PointerExited;
+        }
+
+        protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+        {
+            base.OnApplyTemplate(e);
+            _defaultFilterBox = e.NameScope.Find<TextBox>("PART_DefaultFilter");
+            _customFilterPresenter = e.NameScope.Find<ContentPresenter>("PART_CustomFilter");
+            UpdateFilterTemplateVisibility();
+        }
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (change.Property == FilterControlTemplateProperty || change.Property == IsFilterRowVisibleProperty)
+            {
+                UpdateFilterTemplateVisibility();
+            }
+        }
+
+        private void UpdateFilterTemplateVisibility()
+        {
+            var showCustom = IsFilterRowVisible && FilterControlTemplate != null;
+            if (_customFilterPresenter != null)
+            {
+                _customFilterPresenter.IsVisible = showCustom;
+                _customFilterPresenter.Content = showCustom ? OwningColumn : null;
+                _customFilterPresenter.ContentTemplate = showCustom ? FilterControlTemplate : null;
+            }
+            if (_defaultFilterBox != null)
+            {
+                _defaultFilterBox.IsVisible = IsFilterRowVisible && !showCustom;
+            }
         }
 
         protected override AutomationPeer OnCreateAutomationPeer()

@@ -939,6 +939,13 @@ namespace Avalonia.Controls
                     Mode = BindingMode.TwoWay
                 });
             result.FilterHint = GetDefaultFilterHint(FilterKind);
+            result.Bind(DataGridColumnHeader.FilterControlTemplateProperty,
+                new Binding
+                {
+                    Source = this,
+                    Path = nameof(FilterControlTemplate),
+                    Mode = BindingMode.OneWay
+                });
             if (OwningGrid != null)
             {
                 result.Bind(DataGridColumnHeader.IsFilterRowVisibleProperty,
@@ -965,6 +972,9 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<DataGridFilterKind> FilterKindProperty =
             AvaloniaProperty.Register<DataGridColumn, DataGridFilterKind>(nameof(FilterKind), defaultValue: DataGridFilterKind.Text);
 
+        public static readonly StyledProperty<IDataTemplate> FilterControlTemplateProperty =
+            AvaloniaProperty.Register<DataGridColumn, IDataTemplate>(nameof(FilterControlTemplate));
+
         /// <summary>
         /// Gets or sets the filter text used for column filtering (custom extension for ILSpy).
         /// </summary>
@@ -981,6 +991,15 @@ namespace Avalonia.Controls
         {
             get => GetValue(FilterKindProperty);
             set => SetValue(FilterKindProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a custom filter control template that replaces the default TextBox in the filter row.
+        /// </summary>
+        public IDataTemplate FilterControlTemplate
+        {
+            get => GetValue(FilterControlTemplateProperty);
+            set => SetValue(FilterControlTemplateProperty, value);
         }
 
         private static string GetDefaultFilterHint(DataGridFilterKind kind)

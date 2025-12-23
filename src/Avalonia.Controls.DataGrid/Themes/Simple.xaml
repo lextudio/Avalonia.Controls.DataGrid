@@ -82,7 +82,12 @@
                         Stretch="Uniform" />
                 </Grid>
 
-                <TextBox Margin="0,4,0,2"
+                <ContentPresenter x:Name="PART_CustomFilter"
+                                  Margin="0,4,0,2"
+                                  IsVisible="False" />
+
+                <TextBox x:Name="PART_DefaultFilter"
+                         Margin="0,4,0,2"
                          FontSize="12"
                          Height="22"
                          HorizontalAlignment="Stretch"
