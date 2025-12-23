@@ -236,6 +236,51 @@ namespace DataGridSample
             }
         }
 
+        private void OnFiltersPointerMoved(object? sender, PointerEventArgs e)
+        {
+            if (sender is not DataGrid dg)
+                return;
+            if (this.Get<CheckBox>("HoverTooltipToggle").IsChecked != true)
+            {
+                ToolTip.SetTip(dg, null);
+                return;
+            }
+            var hit = dg.HitTestCell(e.GetPosition(dg));
+            if (hit.IsEmpty || hit.Column == null)
+            {
+                ToolTip.SetTip(dg, null);
+                return;
+            }
+
+            var header = hit.Column.Header?.ToString() ?? "(col)";
+            var itemIndex = GetItemIndex(dg, hit.Item);
+            var valueText = hit.Item?.ToString() ?? "(null)";
+            var idxText = itemIndex >= 0 ? $"Row {itemIndex}" : "Row ?";
+            ToolTip.SetTip(dg, $"{idxText}, {header}: {valueText}");
+        }
+
+        private void OnFiltersPointerExited(object? sender, PointerEventArgs e)
+        {
+            if (sender is DataGrid dg)
+            {
+                ToolTip.SetTip(dg, null);
+            }
+        }
+
+        private int GetItemIndex(DataGrid dg, object? item)
+        {
+            if (item == null || dg.ItemsSource == null)
+                return -1;
+            int i = 0;
+            foreach (var it in dg.ItemsSource.Cast<object>())
+            {
+                if (ReferenceEquals(it, item))
+                    return i;
+                i++;
+            }
+            return -1;
+        }
+
         private void OnOffsetFilterChanged(object? sender, TextChangedEventArgs e)
         {
             var text = (sender as TextBox)?.Text;

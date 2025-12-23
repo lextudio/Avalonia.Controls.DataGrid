@@ -191,9 +191,13 @@
             <NumericUpDown x:Name="FilterDemoIndex" Minimum="0" Maximum="100" Width="140" Value="5"/>
             <Button Content="Scroll Into View" Click="OnScrollFilterDemo"/>
             <Button Content="Select Item" Click="OnSelectFilterDemo"/>
+            <CheckBox x:Name="HoverTooltipToggle" IsChecked="True" Content="Show hover tooltip"/>
           </StackPanel>
           <TextBlock DockPanel.Dock="Top" x:Name="HitTestInfo" Margin="0,0,0,8" Text="Click a cell to see hit info."/>
-          <DataGrid Name="dataGridFilters" IsFilterRowVisible="True" PointerPressed="OnFiltersPointerPressed">
+          <DataGrid Name="dataGridFilters" IsFilterRowVisible="True"
+                    PointerPressed="OnFiltersPointerPressed"
+                    PointerMoved="OnFiltersPointerMoved"
+                    PointerExited="OnFiltersPointerExited">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
               <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
