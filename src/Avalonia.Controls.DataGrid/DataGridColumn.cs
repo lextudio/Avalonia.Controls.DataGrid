@@ -960,6 +960,9 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<string> FilterValueProperty =
             AvaloniaProperty.Register<DataGridColumn, string>(nameof(FilterValue));
 
+        public static readonly StyledProperty<DataGridFilterKind> FilterKindProperty =
+            AvaloniaProperty.Register<DataGridColumn, DataGridFilterKind>(nameof(FilterKind), defaultValue: DataGridFilterKind.Text);
+
         /// <summary>
         /// Gets or sets the filter text used for column filtering (custom extension for ILSpy).
         /// </summary>
@@ -967,6 +970,15 @@ namespace Avalonia.Controls
         {
             get => GetValue(FilterValueProperty);
             set => SetValue(FilterValueProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the filter kind, used to drive specialized filter UIs (hex, flags, text). Avalonia fork extension.
+        /// </summary>
+        public DataGridFilterKind FilterKind
+        {
+            get => GetValue(FilterKindProperty);
+            set => SetValue(FilterKindProperty, value);
         }
 
         /// <summary>

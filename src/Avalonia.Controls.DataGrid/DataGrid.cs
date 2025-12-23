@@ -1063,19 +1063,38 @@ namespace Avalonia.Controls
                     continue;
                 }
 
-                var valueText = GetCellValueAsString(item, col);
-                if (valueText == null)
-                {
+                var kind = col.FilterKind;
+                if (!ApplySingleFilter(item, col, filter, kind))
                     return false;
-                }
-
-                if (valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    return false;
-                }
             }
 
             return true;
+        }
+
+        private bool ApplySingleFilter(object item, DataGridColumn col, string filter, DataGridFilterKind kind)
+        {
+            var valueText = GetCellValueAsString(item, col);
+            if (valueText == null)
+                return false;
+
+            switch (kind)
+            {
+                case DataGridFilterKind.Hex:
+                    if (TryParseNumber(valueText, out var number) && TryParseNumber(filter, out var filterNum))
+                    {
+                        return number.ToString("X").IndexOf(filterNum.ToString("X"), StringComparison.OrdinalIgnoreCase) >= 0
+                               || number.ToString().IndexOf(filterNum.ToString(), StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
+                    return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
+                case DataGridFilterKind.Flags:
+                    if (TryParseNumber(valueText, out var flagsVal) && TryParseNumber(filter, out var flagsMask))
+                    {
+                        return (flagsVal & flagsMask) == flagsMask;
+                    }
+                    return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
+                default:
+                    return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
+            }
         }
 
         private static string GetCellValueAsString(object item, DataGridColumn col)
@@ -1099,6 +1118,18 @@ namespace Avalonia.Controls
             }
 
             return item?.ToString() ?? string.Empty;
+        }
+
+        private static bool TryParseNumber(string text, out long value)
+        {
+            text = text.Trim();
+            var styles = System.Globalization.NumberStyles.Integer;
+            if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                styles = System.Globalization.NumberStyles.HexNumber;
+                text = text.Substring(2);
+            }
+            return long.TryParse(text, styles, System.Globalization.CultureInfo.InvariantCulture, out value);
         }
 
         private static string GetBindingPath(DataGridColumn col)

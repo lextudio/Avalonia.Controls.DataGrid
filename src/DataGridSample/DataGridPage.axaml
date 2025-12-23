@@ -149,6 +149,20 @@
           <Button Grid.Row="1" Name="btnAdd" Margin="12,0,12,12" Content="Add" HorizontalAlignment="Right" />
         </Grid>
       </TabItem>
+
+      <TabItem Header="Filters (Hex &amp; Flags)">
+        <DataGrid Name="dataGridFilters" Margin="12" IsFilterRowVisible="True">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+            <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
+            <DataGridTextColumn Header="Offset (try 0x20 or 32)" Binding="{Binding OffsetHex}" Width="*"
+                                FilterKind="Hex"/>
+            <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="*"
+                                FilterKind="Flags"/>
+            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </TabItem>
     </TabControl>
   </Grid>
 </UserControl>

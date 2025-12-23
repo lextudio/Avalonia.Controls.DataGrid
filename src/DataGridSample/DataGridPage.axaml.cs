@@ -97,6 +97,9 @@ namespace DataGridSample
             var addButton = this.Get<Button>("btnAdd");
             addButton.Click += (a, b) => list.Add(new Person());
 
+            var dgFilters = this.Get<DataGrid>("dataGridFilters");
+            dgFilters.ItemsSource = BuildFilterDemoItems();
+
             DataContext = this;
         }
 
@@ -164,6 +167,25 @@ namespace DataGridSample
                 }
                 return null!;
             };
+        }
+
+        private IEnumerable<object> BuildFilterDemoItems()
+        {
+            var items = new List<object>();
+            for (int i = 0; i < 25; i++)
+            {
+                var offset = i * 0x10;
+                var flags = (i % 2 == 0 ? 0x1 : 0) | (i % 3 == 0 ? 0x4 : 0) | (i % 5 == 0 ? 0x8 : 0);
+                items.Add(new
+                {
+                    Name = $"Item {i}",
+                    Index = i,
+                    OffsetHex = $"0x{offset:X}",
+                    Flags = $"0x{flags:X}",
+                    Description = $"Offset {offset} (0x{offset:X}), flags {flags} (0x{flags:X})"
+                });
+            }
+            return items;
         }
     }
 }
