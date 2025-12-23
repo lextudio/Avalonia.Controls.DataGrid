@@ -42,9 +42,12 @@
                     Width="200"
                     Increment="10"
                     Value="200"/>
+            <CheckBox x:Name="FilterToggle" IsChecked="True" Content="Show Filter Row"
+                      ToolTip.Tip="Toggle the per-column filter TextBoxes added in the fork."/>
           </StackPanel>
           <DataGrid Name="dataGrid1" Margin="12" CanUserResizeColumns="True" CanUserReorderColumns="True" CanUserSortColumns="True" HeadersVisibility="All"
-                    RowBackground="#1000">
+                    RowBackground="#1000"
+                    IsFilterRowVisible="{Binding #FilterToggle.IsChecked}">
             <DataGrid.Styles>
               <Style Selector="DataGridRow">
                 <Setter Property="Header" Value="{Binding $self.Index}"/>

@@ -71,10 +71,28 @@ namespace Avalonia.Controls
                 nameof(AreSeparatorsVisible),
                 defaultValue: true);
 
+        public static readonly StyledProperty<bool> IsFilterRowVisibleProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsFilterRowVisible));
+
+        public static readonly StyledProperty<string> FilterValueProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, string>(nameof(FilterValue));
+
         public bool AreSeparatorsVisible
         {
             get { return GetValue(AreSeparatorsVisibleProperty); }
             set { SetValue(AreSeparatorsVisibleProperty, value); }
+        }
+
+        public bool IsFilterRowVisible
+        {
+            get => GetValue(IsFilterRowVisibleProperty);
+            set => SetValue(IsFilterRowVisibleProperty, value);
+        }
+
+        public string FilterValue
+        {
+            get => GetValue(FilterValueProperty);
+            set => SetValue(FilterValueProperty, value);
         }
 
         static DataGridColumnHeader()
@@ -493,6 +511,11 @@ namespace Avalonia.Controls
 
         private void DataGridColumnHeader_PointerPressed(object sender, PointerPressedEventArgs e)
         {
+            if (e.Source is TextBox)
+            {
+                return;
+            }
+
             if (OwningColumn == null || e.Handled || !IsEnabled || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             {
                 return;
@@ -508,6 +531,11 @@ namespace Avalonia.Controls
 
         private void DataGridColumnHeader_PointerReleased(object sender, PointerReleasedEventArgs e)
         {
+            if (e.Source is TextBox)
+            {
+                return;
+            }
+
             if (OwningColumn == null || e.Handled || !IsEnabled || e.InitialPressMouseButton != MouseButton.Left)
             {
                 return;

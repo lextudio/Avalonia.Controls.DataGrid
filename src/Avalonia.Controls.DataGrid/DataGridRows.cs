@@ -540,7 +540,11 @@ namespace Avalonia.Controls
         internal void SetRowSelection(int slot, bool isSelected, bool setAnchorSlot)
         {
             Debug.Assert(!(!isSelected && setAnchorSlot));
-            Debug.Assert(!IsSlotOutOfSelectionBounds(slot));
+            if (IsSlotOutOfSelectionBounds(slot))
+            {
+                // Filtering or data refresh can temporarily drive selection updates with an invalid slot.
+                return;
+            }
             _noSelectionChangeCount++;
             try
             {

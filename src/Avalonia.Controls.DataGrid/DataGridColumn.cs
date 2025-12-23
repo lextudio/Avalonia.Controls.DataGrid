@@ -19,6 +19,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using System.Reflection;
 
 namespace Avalonia.Controls
 {
@@ -43,6 +44,14 @@ namespace Avalonia.Controls
         private ControlTheme _cellTheme;
         private Classes _cellStyleClasses;
         private bool _setWidthInternalNoCallback;
+
+        static DataGridColumn()
+        {
+            FilterValueProperty.Changed.AddClassHandler<DataGridColumn>((x, e) =>
+            {
+                x.OwningGrid?.OnColumnFilterChanged(x);
+            });
+        }
 
         /// <summary>
         /// Occurs when the pointer is pressed over the column's header
@@ -921,6 +930,23 @@ namespace Avalonia.Controls
             };
             result[!ContentControl.ContentProperty] = this[!HeaderProperty];
             result[!ContentControl.ContentTemplateProperty] = this[!HeaderTemplateProperty];
+            result.Bind(DataGridColumnHeader.FilterValueProperty,
+                new Binding
+                {
+                    Source = this,
+                    Path = nameof(FilterValue),
+                    Mode = BindingMode.TwoWay
+                });
+            if (OwningGrid != null)
+            {
+                result.Bind(DataGridColumnHeader.IsFilterRowVisibleProperty,
+                    new Binding
+                    {
+                        Source = OwningGrid,
+                        Path = nameof(DataGrid.IsFilterRowVisible),
+                        Mode = BindingMode.OneWay
+                    });
+            }
             if (OwningGrid.ColumnHeaderTheme is { } columnTheme)
             {
                 result.SetValue(StyledElement.ThemeProperty, columnTheme, BindingPriority.Template);
@@ -929,6 +955,18 @@ namespace Avalonia.Controls
             result.PointerPressed += (s, e) => { HeaderPointerPressed?.Invoke(this, e); };
             result.PointerReleased += (s, e) => { HeaderPointerReleased?.Invoke(this, e); };
             return result;
+        }
+
+        public static readonly StyledProperty<string> FilterValueProperty =
+            AvaloniaProperty.Register<DataGridColumn, string>(nameof(FilterValue));
+
+        /// <summary>
+        /// Gets or sets the filter text used for column filtering (custom extension for ILSpy).
+        /// </summary>
+        public string FilterValue
+        {
+            get => GetValue(FilterValueProperty);
+            set => SetValue(FilterValueProperty, value);
         }
 
         /// <summary>

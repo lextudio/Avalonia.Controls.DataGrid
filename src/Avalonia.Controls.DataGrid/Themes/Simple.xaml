@@ -62,26 +62,34 @@
                   CornerRadius="{TemplateBinding CornerRadius}">
             <Grid ColumnDefinitions="*,Auto">
 
-              <Grid Margin="{TemplateBinding Padding}"
-                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                    ColumnDefinitions="*,Auto">
-                <ContentPresenter x:Name="PART_ContentPresenter"
-                                  Content="{TemplateBinding Content}"
-                                  ContentTemplate="{TemplateBinding ContentTemplate}" />
+              <StackPanel Margin="{TemplateBinding Padding}"
+                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <ContentPresenter x:Name="PART_ContentPresenter"
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}" />
 
-                <Path Name="SortIcon"
-                      Grid.Column="1"
-                      Width="8"
-                      Margin="4,0,0,0"
-                      HorizontalAlignment="Left"
-                      VerticalAlignment="Center"
-                      Data="F1 M -5.215,6.099L 5.215,6.099L 0,0L -5.215,6.099 Z "
-                      Fill="{TemplateBinding Foreground}"
-                      IsVisible="False"
-                      Stretch="Uniform" />
+                  <Path Name="SortIcon"
+                        Grid.Column="1"
+                        Width="8"
+                        Margin="4,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Data="F1 M -5.215,6.099L 5.215,6.099L 0,0L -5.215,6.099 Z "
+                        Fill="{TemplateBinding Foreground}"
+                        IsVisible="False"
+                        Stretch="Uniform" />
+                </Grid>
 
-              </Grid>
+                <TextBox Margin="0,4,0,2"
+                         FontSize="12"
+                         Height="22"
+                         HorizontalAlignment="Stretch"
+                         IsVisible="{TemplateBinding IsFilterRowVisible}"
+                         Text="{TemplateBinding FilterValue, Mode=TwoWay}"
+                         Watermark="Filter..." />
+              </StackPanel>
 
               <Rectangle Name="VerticalSeparator"
                          Grid.Column="1"

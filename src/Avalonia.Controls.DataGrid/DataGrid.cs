@@ -22,8 +22,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Linq;
+using System.Reflection;
 using Avalonia.Input.Platform;
 using System.ComponentModel.DataAnnotations;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls.Automation.Peers;
 using Avalonia.Controls.Utils;
@@ -644,6 +646,9 @@ namespace Avalonia.Controls
             set { SetValue(ClipboardCopyModeProperty, value); }
         }
 
+        public static readonly StyledProperty<bool> IsFilterRowVisibleProperty =
+            AvaloniaProperty.Register<DataGrid, bool>(nameof(IsFilterRowVisible));
+
         public static readonly StyledProperty<bool> AutoGenerateColumnsProperty =
             AvaloniaProperty.Register<DataGrid, bool>(nameof(AutoGenerateColumns));
 
@@ -655,6 +660,15 @@ namespace Avalonia.Controls
         {
             get { return GetValue(AutoGenerateColumnsProperty); }
             set { SetValue(AutoGenerateColumnsProperty, value); }
+        }
+
+        /// <summary>
+        /// Shows a lightweight filter box inside each column header. This is an Avalonia fork extension.
+        /// </summary>
+        public bool IsFilterRowVisible
+        {
+            get => GetValue(IsFilterRowVisibleProperty);
+            set => SetValue(IsFilterRowVisibleProperty, value);
         }
 
         private void OnAutoGenerateColumnsChanged(AvaloniaPropertyChangedEventArgs e)
@@ -923,6 +937,9 @@ namespace Avalonia.Controls
                         }
                     }
                     DataConnection.WireEvents(DataConnection.DataSource);
+
+                    // reapply active column filters on the new view
+                    OnColumnFilterChanged(null);
                 }
 
                 // Wait for the current cell to be set before we raise any SelectionChanged events
@@ -964,6 +981,93 @@ namespace Avalonia.Controls
         {
             PseudoClasses.Set(":empty-columns", !ColumnsInternal.GetVisibleColumns().Any());
             PseudoClasses.Set(":empty-rows", !DataConnection.Any());
+        }
+
+        internal void OnColumnFilterChanged(DataGridColumn column)
+        {
+            if (DataConnection?.CollectionView is IDataGridCollectionView view && view.CanFilter)
+            {
+                var activeFilters = ColumnsInternal
+                    .Where(c => !string.IsNullOrWhiteSpace(c.FilterValue))
+                    .ToList();
+
+                if (activeFilters.Count == 0)
+                {
+                    view.Filter = null;
+                    return;
+                }
+
+                view.Filter = item => ApplyColumnFilters(item, activeFilters);
+            }
+        }
+
+        private bool ApplyColumnFilters(object item, List<DataGridColumn> activeFilters)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            foreach (var col in activeFilters)
+            {
+                var filter = col.FilterValue;
+                if (string.IsNullOrWhiteSpace(filter))
+                {
+                    continue;
+                }
+
+                var valueText = GetCellValueAsString(item, col);
+                if (valueText == null)
+                {
+                    return false;
+                }
+
+                if (valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static string GetCellValueAsString(object item, DataGridColumn col)
+        {
+            try
+            {
+                var path = GetBindingPath(col);
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    var prop = item.GetType().GetProperty(path, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    if (prop != null)
+                    {
+                        var value = prop.GetValue(item);
+                        return value?.ToString() ?? string.Empty;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore reflection failures and fall back to ToString
+            }
+
+            return item?.ToString() ?? string.Empty;
+        }
+
+        private static string GetBindingPath(DataGridColumn col)
+        {
+            if (col is DataGridBoundColumn bound)
+            {
+                if (bound.Binding is Binding binding)
+                {
+                    return binding.Path;
+                }
+                if (bound.Binding is CompiledBindingExtension compiled)
+                {
+                    return compiled.Path?.ToString();
+                }
+            }
+            return null;
         }
 
         private void OnSelectedIndexChanged(AvaloniaPropertyChangedEventArgs e)

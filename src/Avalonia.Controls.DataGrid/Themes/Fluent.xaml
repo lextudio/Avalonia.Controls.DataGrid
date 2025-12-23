@@ -174,19 +174,19 @@
                   CornerRadius="{TemplateBinding CornerRadius}">
             <Grid Name="PART_ColumnHeaderRoot" ColumnDefinitions="*,Auto">
 
-              <Panel Margin="{TemplateBinding Padding}"
-                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+              <StackPanel Margin="{TemplateBinding Padding}"
+                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                 <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" MinWidth="{DynamicResource DataGridSortIconMinWidth}" />
                   </Grid.ColumnDefinitions>
-                
+
                   <ContentPresenter x:Name="PART_ContentPresenter"
                                     Content="{TemplateBinding Content}"
                                     ContentTemplate="{TemplateBinding ContentTemplate}" />
-                
+
                   <Path Name="SortIcon"
                         IsVisible="False"
                         Grid.Column="1"
@@ -196,7 +196,15 @@
                         Fill="{TemplateBinding Foreground}"
                         Stretch="Uniform" />
                 </Grid>
-              </Panel>
+
+                <TextBox Margin="0,4,0,2"
+                         FontSize="12"
+                         Height="24"
+                         HorizontalAlignment="Stretch"
+                         IsVisible="{TemplateBinding IsFilterRowVisible}"
+                         Text="{TemplateBinding FilterValue, Mode=TwoWay}"
+                         Watermark="Filter..." />
+              </StackPanel>
 
               <Rectangle Name="VerticalSeparator"
                          Grid.Column="1"

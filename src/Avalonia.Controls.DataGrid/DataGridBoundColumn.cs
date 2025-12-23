@@ -124,15 +124,15 @@ namespace Avalonia.Controls
                     var bindingHelper = new CellEditBinding(subject);
                     var instanceBinding = new InstancedBinding(bindingHelper.InternalSubject, result.Mode, result.Priority); 
 
-                    BindingOperations.Apply(target, property, instanceBinding, null);
-                    return bindingHelper;
-                } 
-
-                BindingOperations.Apply(target, property, result, null);
+                BindingOperations.Apply(target, property, instanceBinding);
+                return bindingHelper;
             } 
 
-            return null;
+            BindingOperations.Apply(target, property, result);
         } 
+
+        return null;
+    } 
 
         protected abstract Control GenerateEditingElementDirect(DataGridCell cell, object dataItem); 
 
