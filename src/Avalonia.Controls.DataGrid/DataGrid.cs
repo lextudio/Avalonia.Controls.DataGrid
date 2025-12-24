@@ -187,7 +187,7 @@ namespace Avalonia.Controls
         /// Identifies the CanUserResizeColumns dependency property.
         /// </summary>
         public static readonly StyledProperty<bool> CanUserResizeColumnsProperty =
-            AvaloniaProperty.Register<DataGrid, bool>(nameof(CanUserResizeColumns));
+            AvaloniaProperty.Register<DataGrid, bool>(nameof(CanUserResizeColumns), DATAGRID_defaultCanUserResizeColumns);
 
         /// <summary>
         /// Gets or sets a value that indicates whether the user can adjust column widths using the mouse.
