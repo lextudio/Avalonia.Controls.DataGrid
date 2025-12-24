@@ -299,14 +299,11 @@
                 </DataGridTextColumn.FilterControlTemplate>
               </DataGridTextColumn>
               <DataGridTextColumn Header="Offset (try 0x20 or 32)" Binding="{Binding OffsetHex}" Width="*"
-                                  FilterKind="Hex"
-                                  FilterControlTemplate="{StaticResource OffsetFilterTemplate}"/>
+                                  FilterKind="Hex" />
               <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="2*" MinWidth="240"
-                                  FilterKind="Flags"
-                                  FilterControlTemplate="{StaticResource FlagsFilterTemplate}"/>
+                                  FilterKind="Flags" />
               <DataGridTextColumn Header="Description (regex supported)" Binding="{Binding Description}" Width="3*" MinWidth="220"
-                                  FilterKind="Regex"
-                                  FilterControlTemplate="{StaticResource RegexFilterTemplate}"/>
+                                  FilterKind="Regex" />
             </DataGrid.Columns>
           </DataGrid>
         </DockPanel>

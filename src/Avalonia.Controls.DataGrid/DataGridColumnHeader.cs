@@ -64,6 +64,18 @@ namespace Avalonia.Controls
         private IInputElement _previousFocusedElement;
         private ContentPresenter _popupCustomPresenter;
         private TextBox _popupDefaultBox;
+        private ToggleButton _filterToggleButton;
+        private Control _inlineTextHost;
+        private Control _inlineHexHost;
+        private TextBox _inlineTextBox;
+        private TextBox _inlineHexTextBox;
+        private bool _inlineTextHasFocus;
+        private bool _inlineHexHasFocus;
+        private Control _filterArea;
+        private bool _isPointerOverFilterIcon;
+        private bool _isPointerOverInlineText;
+        private bool _isPointerOverInlineHex;
+        private bool _isPointerOverFilterArea;
 
         public static readonly StyledProperty<IBrush> SeparatorBrushProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, IBrush>(nameof(SeparatorBrush));
@@ -101,6 +113,21 @@ namespace Avalonia.Controls
 
         public static readonly StyledProperty<bool> VisibleFilterButtonProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(VisibleFilterButton));
+
+        public static readonly StyledProperty<DataGridFilterKind> FilterKindProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, DataGridFilterKind>(nameof(FilterKind), defaultValue: DataGridFilterKind.Text);
+
+        public static readonly StyledProperty<bool> ShowInlineTextFilterProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(ShowInlineTextFilter));
+
+        public static readonly StyledProperty<bool> ShowInlineHexFilterProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(ShowInlineHexFilter));
+
+        public static readonly StyledProperty<bool> InlineTextFilterVisibleProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(InlineTextFilterVisible));
+
+        public static readonly StyledProperty<bool> InlineHexFilterVisibleProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(InlineHexFilterVisible));
 
         public static readonly StyledProperty<bool> IsFilterPopupOpenProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsFilterPopupOpen));
@@ -156,6 +183,36 @@ namespace Avalonia.Controls
             set => SetValue(VisibleFilterButtonProperty, value);
         }
 
+        public DataGridFilterKind FilterKind
+        {
+            get => GetValue(FilterKindProperty);
+            set => SetValue(FilterKindProperty, value);
+        }
+
+        public bool ShowInlineTextFilter
+        {
+            get => GetValue(ShowInlineTextFilterProperty);
+            set => SetValue(ShowInlineTextFilterProperty, value);
+        }
+
+        public bool ShowInlineHexFilter
+        {
+            get => GetValue(ShowInlineHexFilterProperty);
+            set => SetValue(ShowInlineHexFilterProperty, value);
+        }
+
+        public bool InlineTextFilterVisible
+        {
+            get => GetValue(InlineTextFilterVisibleProperty);
+            set => SetValue(InlineTextFilterVisibleProperty, value);
+        }
+
+        public bool InlineHexFilterVisible
+        {
+            get => GetValue(InlineHexFilterVisibleProperty);
+            set => SetValue(InlineHexFilterVisibleProperty, value);
+        }
+
         public bool IsFilterPopupOpen
         {
             get => GetValue(IsFilterPopupOpenProperty);
@@ -168,6 +225,7 @@ namespace Avalonia.Controls
             FilterControlTemplateProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
             // Inline filter row removed; do not register IsFilterRowVisible changed handler.
             IsFilterPopupOpenProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnIsFilterPopupOpenChanged(e));
+            FilterKindProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateInlineState());
             PressedMixin.Attach<DataGridColumnHeader>();
             IsTabStopProperty.OverrideDefaultValue<DataGridColumnHeader>(false);
             AutomationProperties.IsOffscreenBehaviorProperty.OverrideDefaultValue<DataGridColumnHeader>(IsOffscreenBehavior.FromClip);
@@ -189,14 +247,85 @@ namespace Avalonia.Controls
         protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
         {
             base.OnApplyTemplate(e);
-            // inline PART_CustomFilter removed from templates
+            if (_filterToggleButton != null)
+            {
+                _filterToggleButton.PointerEntered -= FilterButton_PointerEntered;
+                _filterToggleButton.PointerExited -= FilterButton_PointerExited;
+            }
+            if (_inlineTextHost != null)
+            {
+                _inlineTextHost.PointerEntered -= InlineTextHost_PointerEntered;
+                _inlineTextHost.PointerExited -= InlineTextHost_PointerExited;
+            }
+            if (_inlineHexHost != null)
+            {
+                _inlineHexHost.PointerEntered -= InlineHexHost_PointerEntered;
+                _inlineHexHost.PointerExited -= InlineHexHost_PointerExited;
+            }
+
             _filterPopup = e.NameScope.Find<Popup>("PART_FilterPopup");
+            _filterToggleButton = e.NameScope.Find<ToggleButton>("PART_FilterButton");
+            _inlineTextHost = e.NameScope.Find<Border>("PART_InlineTextHost");
+            _inlineHexHost = e.NameScope.Find<Border>("PART_InlineHexHost");
+            _filterArea = e.NameScope.Find<Border>("PART_FilterArea");
             var popupCustom = e.NameScope.Find<ContentPresenter>("PART_PopupCustom");
             var popupDefault = e.NameScope.Find<TextBox>("PART_PopupDefault");
 
+            if (_filterToggleButton != null)
+            {
+                _filterToggleButton.PointerEntered += FilterButton_PointerEntered;
+                _filterToggleButton.PointerExited += FilterButton_PointerExited;
+            }
+
+            if (_inlineTextHost != null)
+            {
+                _inlineTextHost.PointerEntered += InlineTextHost_PointerEntered;
+                _inlineTextHost.PointerExited += InlineTextHost_PointerExited;
+                // remove previous handlers if any
+                if (_inlineTextBox != null)
+                {
+                    _inlineTextBox.GotFocus -= InlineTextBox_GotFocus;
+                    _inlineTextBox.LostFocus -= InlineTextBox_LostFocus;
+                    _inlineTextBox = null;
+                }
+                // find the inline TextBox and attach focus handlers so focus keeps the inline visible
+                var foundTb = FindFirstOfTypeIn(_inlineTextHost as Control, typeof(TextBox)) as TextBox;
+                if (foundTb != null)
+                {
+                    _inlineTextBox = foundTb;
+                    _inlineTextBox.GotFocus += InlineTextBox_GotFocus;
+                    _inlineTextBox.LostFocus += InlineTextBox_LostFocus;
+                }
+            }
+
+            if (_inlineHexHost != null)
+            {
+                _inlineHexHost.PointerEntered += InlineHexHost_PointerEntered;
+                _inlineHexHost.PointerExited += InlineHexHost_PointerExited;
+                if (_inlineHexTextBox != null)
+                {
+                    _inlineHexTextBox.GotFocus -= InlineHexBox_GotFocus;
+                    _inlineHexTextBox.LostFocus -= InlineHexBox_LostFocus;
+                    _inlineHexTextBox = null;
+                }
+                var foundHex = FindFirstOfTypeIn(_inlineHexHost as Control, typeof(TextBox)) as TextBox;
+                if (foundHex != null)
+                {
+                    _inlineHexTextBox = foundHex;
+                    _inlineHexTextBox.GotFocus += InlineHexBox_GotFocus;
+                    _inlineHexTextBox.LostFocus += InlineHexBox_LostFocus;
+                }
+            }
+
+            if (_filterArea != null)
+            {
+                // Use the unified filter area to control inline visibility to prevent pointer event races
+                _filterArea.PointerEntered += FilterArea_PointerEntered;
+                _filterArea.PointerExited += FilterArea_PointerExited;
+            }
+
             if (popupCustom != null)
             {
-                // If there's a custom template, set the content template (popup builds content for us)
                 popupCustom.ContentTemplate = FilterControlTemplate;
                 popupCustom.Content = OwningColumn ?? (object)this;
             }
@@ -206,13 +335,12 @@ namespace Avalonia.Controls
                 popupDefault.Bind(TextBox.TextProperty, new Binding("FilterValue") { Source = this, Mode = BindingMode.TwoWay });
                 popupDefault.Bind(TextBox.WatermarkProperty, new Binding("FilterHint") { Source = this });
             }
-            // store popup child presenters for focus management
+
             _popupCustomPresenter = popupCustom;
             _popupDefaultBox = popupDefault;
 
             if (_filterPopup != null)
             {
-                // ensure popup reflects our property
                 _filterPopup.IsOpen = IsFilterPopupOpen;
                 _filterPopup.Opened -= FilterPopup_Opened;
                 _filterPopup.Closed -= FilterPopup_Closed;
@@ -238,7 +366,7 @@ namespace Avalonia.Controls
             // Provide the default textbox-based filter in the popup unless a column explicitly opts out.
             HasDefaultFilterTemplate = true;
             HasFilter = HasCustomFilterTemplate || HasDefaultFilterTemplate;
-            VisibleFilterButton = HasFilter;
+            UpdateInlineState();
 
             // popup presenters are handled via PART_PopupCustom / PART_PopupDefault
 
@@ -246,6 +374,123 @@ namespace Avalonia.Controls
             {
                 _filterPopup.IsOpen = IsFilterPopupOpen;
             }
+        }
+
+        private void UpdateInlineState()
+        {
+            bool hasDefaultFilter = HasDefaultFilterTemplate && !HasCustomFilterTemplate;
+            bool isHex = FilterKind == DataGridFilterKind.Hex;
+            SetValueNoCallback(ShowInlineTextFilterProperty, hasDefaultFilter && !isHex);
+            SetValueNoCallback(ShowInlineHexFilterProperty, hasDefaultFilter && isHex);
+            VisibleFilterButton = HasFilter;
+            SetValueNoCallback(InlineTextFilterVisibleProperty, false);
+            SetValueNoCallback(InlineHexFilterVisibleProperty, false);
+            UpdateInlineVisibility();
+        }
+
+        private void UpdateInlineVisibility()
+        {
+            // Prefer the filter area hovered state which encompasses icon and inline hosts
+            bool over = _isPointerOverFilterArea || _isPointerOverFilterIcon;
+            // Keep inline visible if filter has content or the control has focus or is hovered
+            bool hasValue = !string.IsNullOrEmpty(FilterValue);
+            bool showText = ShowInlineTextFilter && (hasValue || over || _isPointerOverInlineText || _inlineTextHasFocus);
+            bool showHex = ShowInlineHexFilter && (hasValue || over || _isPointerOverInlineHex || _inlineHexHasFocus);
+            bool prevText = InlineTextFilterVisible;
+            SetValueNoCallback(InlineTextFilterVisibleProperty, showText);
+            SetValueNoCallback(InlineHexFilterVisibleProperty, showHex);
+            if (showText && !prevText)
+            {
+                // Try to focus the inline TextBox when it becomes visible
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    try
+                    {
+                        if (_inlineTextHost is Visual v)
+                        {
+                            // find first TextBox descendant
+                            var tb = FindFirstOfTypeIn(v as Control, typeof(TextBox)) as IInputElement;
+                            tb?.Focus();
+                        }
+                    }
+                    catch { }
+                });
+            }
+            // Hide the filter toggle while an inline filter control is visible
+            bool anyInlineVisible = showText || showHex;
+            SetValueNoCallback(VisibleFilterButtonProperty, HasFilter && !anyInlineVisible);
+        }
+
+        private void FilterButton_PointerEntered(object sender, PointerEventArgs e)
+        {
+            _isPointerOverFilterIcon = true;
+            UpdateInlineVisibility();
+        }
+
+        private void FilterButton_PointerExited(object sender, PointerEventArgs e)
+        {
+            _isPointerOverFilterIcon = false;
+            UpdateInlineVisibility();
+        }
+
+        private void FilterArea_PointerEntered(object sender, PointerEventArgs e)
+        {
+            _isPointerOverFilterArea = true;
+            UpdateInlineVisibility();
+        }
+
+        private void FilterArea_PointerExited(object sender, PointerEventArgs e)
+        {
+            _isPointerOverFilterArea = false;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineTextBox_GotFocus(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            _inlineTextHasFocus = true;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineTextBox_LostFocus(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            _inlineTextHasFocus = false;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineHexBox_GotFocus(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            _inlineHexHasFocus = true;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineHexBox_LostFocus(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            _inlineHexHasFocus = false;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineTextHost_PointerEntered(object sender, PointerEventArgs e)
+        {
+            _isPointerOverInlineText = true;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineTextHost_PointerExited(object sender, PointerEventArgs e)
+        {
+            _isPointerOverInlineText = false;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineHexHost_PointerEntered(object sender, PointerEventArgs e)
+        {
+            _isPointerOverInlineHex = true;
+            UpdateInlineVisibility();
+        }
+
+        private void InlineHexHost_PointerExited(object sender, PointerEventArgs e)
+        {
+            _isPointerOverInlineHex = false;
+            UpdateInlineVisibility();
         }
 
         private static void OnIsFilterPopupOpenChanged(DataGridColumnHeader header, AvaloniaPropertyChangedEventArgs e)
@@ -786,9 +1031,21 @@ namespace Avalonia.Controls
 
         private void DataGridColumnHeader_PointerPressed(object sender, PointerPressedEventArgs e)
         {
+            // If the pointer event originated from a TextBox (or from inside the filter area),
+            // let that control handle the event so it can receive focus and typing.
             if (e.Source is TextBox)
             {
                 return;
+            }
+            if (_filterArea != null && e.Source is Visual srcVisual)
+            {
+                var cur = srcVisual;
+                while (cur != null)
+                {
+                    if (cur == (Visual)_filterArea)
+                        return;
+                    cur = cur.VisualParent as Visual;
+                }
             }
 
             if (OwningColumn == null || e.Handled || !IsEnabled || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
@@ -806,9 +1063,20 @@ namespace Avalonia.Controls
 
         private void DataGridColumnHeader_PointerReleased(object sender, PointerReleasedEventArgs e)
         {
+            // Allow controls inside the filter area to receive the release event
             if (e.Source is TextBox)
             {
                 return;
+            }
+            if (_filterArea != null && e.Source is Visual srcVisual)
+            {
+                var cur = srcVisual;
+                while (cur != null)
+                {
+                    if (cur == (Visual)_filterArea)
+                        return;
+                    cur = cur.VisualParent as Visual;
+                }
             }
 
             if (OwningColumn == null || e.Handled || !IsEnabled || e.InitialPressMouseButton != MouseButton.Left)

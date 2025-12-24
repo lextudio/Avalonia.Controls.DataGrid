@@ -962,6 +962,13 @@ namespace Avalonia.Controls
                     Path = nameof(FilterControlTemplate),
                     Mode = BindingMode.OneWay
                 });
+            result.Bind(DataGridColumnHeader.FilterKindProperty,
+                new Binding
+                {
+                    Source = this,
+                    Path = nameof(FilterKind),
+                    Mode = BindingMode.OneWay
+                });
             // indicate whether this column has a custom filter template
             result.HasCustomFilterTemplate = FilterControlTemplate != null;
             // Header will compute HasFilter based on available templates (custom or default).

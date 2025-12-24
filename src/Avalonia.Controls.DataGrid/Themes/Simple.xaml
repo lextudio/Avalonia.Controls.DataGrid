@@ -62,10 +62,11 @@
                   Background="{TemplateBinding Background}"
                   BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}"
-                  CornerRadius="{TemplateBinding CornerRadius}">
+                  CornerRadius="{TemplateBinding CornerRadius}"
+                  MinHeight="40">
             <Grid ColumnDefinitions="*,Auto">
 
-              <Grid RowDefinitions="Auto,*">
+              <Grid RowDefinitions="10,Auto">
                 <!-- Sort triangle pinned to the physical top edge (outside padding) -->
                 <Path Name="SortTriangle"
                       Grid.Row="0"
@@ -84,10 +85,11 @@
                       AutomationProperties.Name="Sort indicator"
                       AutomationProperties.HelpText="Indicates sort direction" />
 
-                <Grid Grid.Row="1"
-                      Margin="{TemplateBinding Padding}"
-                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                        <Grid Grid.Row="1"
+                          Margin="{TemplateBinding Padding}"
+                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalAlignment="Bottom"
+                          MinHeight="28">
                   <Grid ColumnDefinitions="*,Auto">
                     <ContentPresenter x:Name="PART_ContentPresenter"
                                       Grid.Column="0"
@@ -95,30 +97,73 @@
                                       ContentTemplate="{TemplateBinding ContentTemplate}"
                                       ZIndex="0"
                                       ClipToBounds="True"
+                                      VerticalAlignment="Bottom"
                                       TextTrimming="CharacterEllipsis" />
-                    <ToggleButton x:Name="PART_FilterButton"
-                                  Grid.Column="1"
-                                  Width="18"
-                                  Height="18"
-                                  Margin="8,0,0,0"
-                                  HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"
-                                  Classes="filter-button"
-                                  IsVisible="{TemplateBinding VisibleFilterButton}"
-                                  IsChecked="{Binding IsFilterPopupOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                  ZIndex="0"
-                                  Focusable="True"
-                                  IsTabStop="True"
-                                  ToolTip.Tip="Open filter"
-                                  AutomationProperties.Name="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
-                                  AutomationProperties.HelpText="Open column filter">
-                      <Path Data="{StaticResource DataGridFilterIconPath}"
-                            Fill="{TemplateBinding Foreground}"
-                            Width="12"
-                            Height="12"
-                            Stretch="Uniform"
-                            IsHitTestVisible="False" />
-                    </ToggleButton>
+                    <Border Grid.Column="1" x:Name="PART_FilterArea" Background="Transparent" HorizontalAlignment="Right" IsHitTestVisible="True">
+                      <Grid>
+                        <Border x:Name="PART_InlineTextHost"
+                                IsVisible="{TemplateBinding InlineTextFilterVisible}"
+                                Background="Transparent"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Margin="0"
+                                Padding="0"
+                                ZIndex="1">
+                          <TextBox Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                   Watermark="{Binding FilterHint, RelativeSource={RelativeSource TemplatedParent}}"
+                                   Width="25"
+                                   MinHeight="0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" />
+                        </Border>
+                        <Border x:Name="PART_InlineHexHost"
+                                IsVisible="{TemplateBinding InlineHexFilterVisible}"
+                                Background="Transparent"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Margin="0"
+                                Padding="0"
+                                ZIndex="1">
+                          <StackPanel Orientation="Horizontal" Spacing="2">
+                            <TextBlock Text="0x"
+                                       VerticalAlignment="Center"
+                                       Foreground="{TemplateBinding Foreground}" />
+                            <TextBox Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                     Watermark="{Binding FilterHint, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Width="25"
+                                     MinHeight="0"
+                                     HorizontalAlignment="Right"
+                                     VerticalAlignment="Center" />
+                          </StackPanel>
+                        </Border>
+                        <ToggleButton x:Name="PART_FilterButton"
+                                      Width="18"
+                                      Height="18"
+                                      Margin="0"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      Classes="filter-button"
+                                      Background="Transparent"
+                                      BorderBrush="Transparent"
+                                      BorderThickness="0"
+                                      Padding="0"
+                                      IsVisible="{TemplateBinding VisibleFilterButton}"
+                                      IsChecked="{Binding IsFilterPopupOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                      ZIndex="0"
+                                      Focusable="True"
+                                      IsTabStop="True"
+                                      ToolTip.Tip="Open filter"
+                                      AutomationProperties.Name="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                      AutomationProperties.HelpText="Open column filter">
+                          <Path Data="{StaticResource DataGridFilterIconPath}"
+                                Fill="{TemplateBinding Foreground}"
+                                Width="12"
+                                Height="12"
+                                Stretch="Uniform"
+                                IsHitTestVisible="False" />
+                        </ToggleButton>
+                      </Grid>
+                    </Border>
                   </Grid>
 
                   <Popup Name="PART_FilterPopup"
