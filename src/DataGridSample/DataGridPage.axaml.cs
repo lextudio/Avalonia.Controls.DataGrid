@@ -20,6 +20,7 @@ using Avalonia.Input;
 using System.Globalization;
 using Avalonia.VisualTree;
 using System.Windows.Input;
+using Avalonia.Controls.Primitives;
 
 namespace DataGridSample
 {
@@ -110,6 +111,7 @@ namespace DataGridSample
             var dgFilters = this.Get<DataGrid>("dataGridFilters");
             dgFilters.ItemsSource = BuildFilterDemoItems();
             dgFilters.AddHandler(InputElement.PointerPressedEvent, OnFiltersPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
+            dg1.ContextMenuOpening += OnGridContextMenuOpening;
 
             DataContext = this;
         }
@@ -304,6 +306,27 @@ namespace DataGridSample
                 }
             };
             dlg.Show();
+        }
+
+        private void OnGridContextMenuOpening(object? sender, DataGridContextMenuEventArgs e)
+        {
+            var header = e.Column?.Header?.ToString() ?? "(no column)";
+            var itemText = e.Item?.ToString() ?? "(no item)";
+            var flyout = new MenuFlyout
+            {
+                Items =
+                {
+                    new MenuItem { Header = $"Column: {header}" , IsEnabled = false},
+                    new MenuItem { Header = $"Item: {itemText}", IsEnabled = false},
+                    new MenuItem
+                    {
+                        Header = "Show details",
+                        Command = ShowCountryDetailsCommand,
+                        CommandParameter = (e.Item as Country)?.Name ?? itemText
+                    }
+                }
+            };
+            e.Flyout = flyout;
         }
 
         private sealed class DelegateCommand<T> : ICommand

@@ -816,6 +816,7 @@ namespace Avalonia.Controls
             //TODO: Check if override works
             GotFocus += DataGrid_GotFocus;
             LostFocus += DataGrid_LostFocus;
+            AddHandler(ContextRequestedEvent, OnContextRequestedInternal, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
 
             _loadedRows = new List<DataGridRow>();
             _lostFocusActions = new Queue<Action>();
@@ -2518,6 +2519,27 @@ namespace Avalonia.Controls
             else
             {
                 e.Handled = e.Handled || !ScrollViewer.GetIsScrollChainingEnabled(this);
+            }
+        }
+
+        private void OnContextRequestedInternal(object? sender, ContextRequestedEventArgs e)
+        {
+            if (e.Handled || ContextMenuOpening == null)
+            {
+                return;
+            }
+
+            if (e.TryGetPosition(this, out var point))
+            {
+                var hit = HitTestCell(point);
+                var args = new DataGridContextMenuEventArgs(hit.Item, hit.Column);
+                ContextMenuOpening?.Invoke(this, args);
+                if (args.Flyout != null)
+                {
+                    var target = (Control?)hit.Cell ?? this;
+                    args.Flyout.ShowAt(target);
+                    e.Handled = true;
+                }
             }
         }
 
@@ -6376,6 +6398,11 @@ namespace Avalonia.Controls
         /// Event listeners can modify or add to the row clipboard content.
         /// </summary>
         public event EventHandler<DataGridRowClipboardEventArgs> CopyingRowClipboardContent;
+
+        /// <summary>
+        /// Occurs when a context menu is about to open for a cell; set <see cref="DataGridContextMenuEventArgs.Flyout"/> to override.
+        /// </summary>
+        public event EventHandler<DataGridContextMenuEventArgs> ContextMenuOpening;
 
         /// <summary>
         /// This method raises the CopyingRowClipboardContent event.
