@@ -559,6 +559,36 @@ namespace Avalonia.Controls
             set { SetValue(SelectionModeProperty, value); }
         }
 
+        public static readonly StyledProperty<DataGridSelectionUnit> SelectionUnitProperty =
+            AvaloniaProperty.Register<DataGrid, DataGridSelectionUnit>(nameof(SelectionUnit), defaultValue: DataGridSelectionUnit.FullRow);
+
+        /// <summary>
+        /// Gets or sets whether selection is by row or cell. Currently informational for Avalonia fork.
+        /// </summary>
+        public DataGridSelectionUnit SelectionUnit // TODO: implement cell selection
+        {
+            get { return GetValue(SelectionUnitProperty); }
+            set { SetValue(SelectionUnitProperty, value); }
+        }
+
+        public static readonly StyledProperty<bool> EnableColumnVirtualizationProperty =
+            AvaloniaProperty.Register<DataGrid, bool>(nameof(EnableColumnVirtualization), true);
+
+        public bool EnableColumnVirtualization
+        {
+            get { return GetValue(EnableColumnVirtualizationProperty); }
+            set { SetValue(EnableColumnVirtualizationProperty, value); }
+        }
+
+        public static readonly StyledProperty<bool> EnableRowVirtualizationProperty =
+            AvaloniaProperty.Register<DataGrid, bool>(nameof(EnableRowVirtualization), true);
+
+        public bool EnableRowVirtualization
+        {
+            get { return GetValue(EnableRowVirtualizationProperty); }
+            set { SetValue(EnableRowVirtualizationProperty, value); }
+        }
+
         public static readonly StyledProperty<IBrush> VerticalGridLinesBrushProperty =
             AvaloniaProperty.Register<DataGrid, IBrush>(nameof(VerticalGridLinesBrush));
 

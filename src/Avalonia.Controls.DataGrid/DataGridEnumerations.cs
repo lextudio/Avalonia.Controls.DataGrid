@@ -121,4 +121,13 @@ namespace Avalonia.Controls
         Extended = 0,
         Single = 1
     }
+
+#if !DATAGRID_INTERNAL
+    public
+#endif
+    enum DataGridSelectionUnit
+    {
+        FullRow = 0,
+        Cell = 1
+    }
 }
