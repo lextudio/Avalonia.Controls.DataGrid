@@ -772,6 +772,15 @@ namespace Avalonia.Controls
         public IDataGridCollectionView CollectionView =>
             DataConnection.CollectionView;
 
+        /// <summary>
+        /// WPF compatibility: exposes items. Setting maps to ItemsSource; getting materializes if needed.
+        /// </summary>
+        public IList Items
+        {
+            get => ItemsSource as IList ?? (ItemsSource is IEnumerable e ? e.Cast<object>().ToList() : Array.Empty<object>());
+            set => ItemsSource = value;
+        }
+
         static DataGrid()
         {
             AffectsMeasure<DataGrid>(
@@ -3507,6 +3516,19 @@ namespace Avalonia.Controls
                 LoadingOrUnloadingRow = true;
                 handler(this, e);
                 LoadingOrUnloadingRow = false;
+            }
+        }
+
+        /// <summary>
+        /// WPF compatibility helper: sets row details visibility for a specific item.
+        /// </summary>
+        public void SetDetailsVisibilityForItem(object item, DataGridRowDetailsVisibilityMode visibility)
+        {
+            var row = GetRowFromItem(item);
+            if (row != null)
+            {
+                bool isVisible = visibility == DataGridRowDetailsVisibilityMode.Visible || visibility == DataGridRowDetailsVisibilityMode.VisibleWhenSelected;
+                row.SetDetailsVisibilityInternal(isVisible, raiseNotification: true, animate: false);
             }
         }
 
