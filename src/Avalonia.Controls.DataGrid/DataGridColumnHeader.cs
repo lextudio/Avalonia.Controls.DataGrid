@@ -23,6 +23,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Utilities;
+using Avalonia.VisualTree;
 
 namespace Avalonia.Controls
 {
@@ -61,6 +62,9 @@ namespace Avalonia.Controls
         private TextBox _defaultFilterBox;
         private ContentPresenter _customFilterPresenter;
         private Popup _filterPopup;
+        private IInputElement _previousFocusedElement;
+        private ContentPresenter _popupCustomPresenter;
+        private TextBox _popupDefaultBox;
 
         public static readonly StyledProperty<IBrush> SeparatorBrushProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, IBrush>(nameof(SeparatorBrush));
@@ -105,6 +109,7 @@ namespace Avalonia.Controls
 
         public static readonly StyledProperty<bool> IsFilterPopupOpenProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsFilterPopupOpen));
+
 
         public bool AreSeparatorsVisible
         {
@@ -177,6 +182,7 @@ namespace Avalonia.Controls
             AreSeparatorsVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnAreSeparatorsVisibleChanged(e));
             FilterControlTemplateProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
             IsFilterRowVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
+            IsFilterPopupOpenProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnIsFilterPopupOpenChanged(e));
             PressedMixin.Attach<DataGridColumnHeader>();
             IsTabStopProperty.OverrideDefaultValue<DataGridColumnHeader>(false);
             AutomationProperties.IsOffscreenBehaviorProperty.OverrideDefaultValue<DataGridColumnHeader>(IsOffscreenBehavior.FromClip);
@@ -223,6 +229,19 @@ namespace Avalonia.Controls
             {
                 popupDefault.Bind(TextBox.TextProperty, new Binding("FilterValue") { Source = this, Mode = BindingMode.TwoWay });
                 popupDefault.Bind(TextBox.WatermarkProperty, new Binding("FilterHint") { Source = this });
+            }
+            // store popup child presenters for focus management
+            _popupCustomPresenter = popupCustom;
+            _popupDefaultBox = popupDefault;
+
+            if (_filterPopup != null)
+            {
+                // ensure popup reflects our property
+                _filterPopup.IsOpen = IsFilterPopupOpen;
+                _filterPopup.Opened -= FilterPopup_Opened;
+                _filterPopup.Closed -= FilterPopup_Closed;
+                _filterPopup.Opened += FilterPopup_Opened;
+                _filterPopup.Closed += FilterPopup_Closed;
             }
             // keep references for compact state measurement
             _contentPresenter = contentPresenter;
@@ -310,6 +329,149 @@ namespace Avalonia.Controls
             if (_filterPopup != null)
             {
                 _filterPopup.IsOpen = IsFilterPopupOpen;
+            }
+        }
+
+        private static void OnIsFilterPopupOpenChanged(DataGridColumnHeader header, AvaloniaPropertyChangedEventArgs e)
+        {
+            // This static handler proxies to instance method
+            header.OnIsFilterPopupOpenChanged(e);
+        }
+
+        private void OnIsFilterPopupOpenChanged(AvaloniaPropertyChangedEventArgs e)
+        {
+            if (_filterPopup == null)
+                return;
+
+            bool isOpen = (bool)e.NewValue;
+            // Keep popup IsOpen in sync
+            if (_filterPopup.IsOpen != isOpen)
+            {
+                _filterPopup.IsOpen = isOpen;
+            }
+
+            if (isOpen)
+            {
+                // store previous focus (use Avalonia FocusManager)
+                _previousFocusedElement = FocusManager.GetFocusManager(this)?.GetFocusedElement() as IInputElement;
+                // try to focus the first focusable control in popup
+                FocusFirstElementInPopup();
+            }
+            else
+            {
+                // restore focus back to previous element (usually the toggle button)
+                if (_previousFocusedElement != null)
+                {
+                    try
+                    {
+                        _previousFocusedElement.Focus();
+                    }
+                    catch { }
+                }
+                _previousFocusedElement = null;
+            }
+        }
+
+        private void FilterPopup_Opened(object sender, EventArgs e)
+        {
+            // If the popup opens (e.g., via ToggleButton), set our property
+            SetValueNoCallback(IsFilterPopupOpenProperty, true);
+            FocusFirstElementInPopup();
+
+            // attach key handler to popup child for Escape/Enter
+            if (_filterPopup?.Child is Control childControl)
+            {
+                childControl.KeyDown -= PopupChild_KeyDown;
+                childControl.KeyDown += PopupChild_KeyDown;
+            }
+        }
+
+        private void FilterPopup_Closed(object sender, EventArgs e)
+        {
+            SetValueNoCallback(IsFilterPopupOpenProperty, false);
+            // restore focus
+            if (_previousFocusedElement != null)
+            {
+                try { _previousFocusedElement.Focus(); } catch { }
+            }
+            if (_filterPopup?.Child is Control childControl2)
+            {
+                childControl2.KeyDown -= PopupChild_KeyDown;
+            }
+        }
+
+        private void FocusFirstElementInPopup()
+        {
+            // prefer custom presenter content, then default textbox
+            try
+            {
+                IInputElement toFocus = null;
+                // prefer TextBox inside custom presenter
+                if (_popupCustomPresenter != null && _popupCustomPresenter.Content is Control custom)
+                {
+                    toFocus = FindFirstOfTypeIn(custom, typeof(TextBox)) ?? FindFirstOfTypeIn(custom, typeof(Button)) ?? FindFirstFocusable(custom);
+                }
+                // fallback to popup default textbox
+                if (toFocus == null && _popupDefaultBox != null)
+                {
+                    toFocus = _popupDefaultBox;
+                }
+
+                if (toFocus != null)
+                {
+                    // schedule focus on UI thread to ensure popup visuals are ready
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        try { toFocus.Focus(); } catch { }
+                    });
+                }
+            }
+            catch { }
+        }
+
+        private IInputElement FindFirstFocusable(Control root)
+        {
+            if (root == null) return null;
+            if (root.Focusable) return root;
+            foreach (var child in root.GetVisualChildren())
+            {
+                if (child is Control cc)
+                {
+                    var r = FindFirstFocusable(cc);
+                    if (r != null) return r;
+                }
+            }
+            return null;
+        }
+
+        private IInputElement FindFirstOfTypeIn(Control root, Type type)
+        {
+            if (root == null) return null;
+            if (type.IsInstanceOfType(root) && root.Focusable) return root;
+            foreach (var child in root.GetVisualChildren())
+            {
+                if (child is Control cc)
+                {
+                    var r = FindFirstOfTypeIn(cc, type);
+                    if (r != null) return r;
+                }
+            }
+            return null;
+        }
+
+        private void PopupChild_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape || e.Key == Key.Enter)
+            {
+                // close popup and restore focus
+                try
+                {
+                    SetValueNoCallback(IsFilterPopupOpenProperty, false);
+                    if (_filterPopup != null)
+                        _filterPopup.IsOpen = false;
+                }
+                catch { }
+                e.Handled = true;
             }
         }
 
