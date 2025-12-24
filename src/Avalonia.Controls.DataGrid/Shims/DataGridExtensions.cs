@@ -21,9 +21,7 @@ namespace DataGridExtensions
         public static void SetIsAutoFilterEnabled(DataGrid grid, bool value)
         {
             grid.SetValue(IsAutoFilterEnabledProperty, value);
-            // Map to built-in filter row visibility
-            grid.IsFilterRowVisible = value;
-        }
+       }
 
         public static bool GetIsAutoFilterEnabled(DataGrid grid) => grid.GetValue(IsAutoFilterEnabledProperty);
 

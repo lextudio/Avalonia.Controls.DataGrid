@@ -57,7 +57,8 @@ namespace Avalonia.Controls
                 if (x._headerCell != null)
                 {
                     x._headerCell.HasCustomFilterTemplate = e.NewValue != null;
-                    x._headerCell.HasFilter = x._headerCell.HasCustomFilterTemplate || true;
+                    // Do not force HasFilter here; header will compute HasFilter from custom/default templates.
+                    x._headerCell.HasFilter = x._headerCell.HasCustomFilterTemplate || x._headerCell.HasDefaultFilterTemplate;
                 }
             });
             FilterKindProperty.Changed.AddClassHandler<DataGridColumn>((x, e) =>
@@ -963,18 +964,8 @@ namespace Avalonia.Controls
                 });
             // indicate whether this column has a custom filter template
             result.HasCustomFilterTemplate = FilterControlTemplate != null;
-            // HasFilter if either custom template exists or default textbox is applicable
-            result.HasFilter = result.HasCustomFilterTemplate || true;
-            if (OwningGrid != null)
-            {
-                result.Bind(DataGridColumnHeader.IsFilterRowVisibleProperty,
-                    new Binding
-                    {
-                        Source = OwningGrid,
-                        Path = nameof(DataGrid.IsFilterRowVisible),
-                        Mode = BindingMode.OneWay
-                    });
-            }
+            // Header will compute HasFilter based on available templates (custom or default).
+            // Inline filter row is removed; header popup uses header templates and FilterControlTemplate instead.
             if (OwningGrid.ColumnHeaderTheme is { } columnTheme)
             {
                 result.SetValue(StyledElement.ThemeProperty, columnTheme, BindingPriority.Template);

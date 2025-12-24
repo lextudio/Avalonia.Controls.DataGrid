@@ -696,8 +696,7 @@ namespace Avalonia.Controls
             set { SetValue(ClipboardCopyModeProperty, value); }
         }
 
-        public static readonly StyledProperty<bool> IsFilterRowVisibleProperty =
-            AvaloniaProperty.Register<DataGrid, bool>(nameof(IsFilterRowVisible));
+        // Inline filter row removed; popup-only filtering used instead.
 
         public static readonly StyledProperty<bool> AutoGenerateColumnsProperty =
             AvaloniaProperty.Register<DataGrid, bool>(nameof(AutoGenerateColumns));
@@ -736,14 +735,7 @@ namespace Avalonia.Controls
             set => SetValue(RowDetailsVisibilitySelectorProperty, value);
         }
 
-        /// <summary>
-        /// Shows a lightweight filter box inside each column header. This is an Avalonia fork extension.
-        /// </summary>
-        public bool IsFilterRowVisible
-        {
-            get => GetValue(IsFilterRowVisibleProperty);
-            set => SetValue(IsFilterRowVisibleProperty, value);
-        }
+        // Removed inline filter row API: use header popup filters via DataGridColumnHeader's template and bindings.
 
         private void OnAutoGenerateColumnsChanged(AvaloniaPropertyChangedEventArgs e)
         {

@@ -59,8 +59,7 @@ namespace Avalonia.Controls
         private static DataGridColumn _dragColumn;
         private static double _frozenColumnsWidth;
         private static Lazy<Cursor> _resizeCursor = new Lazy<Cursor>(() => new Cursor(StandardCursorType.SizeWestEast));
-        private TextBox _defaultFilterBox;
-        private ContentPresenter _customFilterPresenter;
+        
         private Popup _filterPopup;
         private IInputElement _previousFocusedElement;
         private ContentPresenter _popupCustomPresenter;
@@ -80,8 +79,7 @@ namespace Avalonia.Controls
                 nameof(AreSeparatorsVisible),
                 defaultValue: true);
 
-        public static readonly StyledProperty<bool> IsFilterRowVisibleProperty =
-            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsFilterRowVisible));
+        // Inline filter row removed; no DataGrid-level IsFilterRowVisible property.
 
         public static readonly StyledProperty<string> FilterValueProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, string>(nameof(FilterValue));
@@ -101,9 +99,6 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<bool> HasDefaultFilterTemplateProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(HasDefaultFilterTemplate));
 
-        public static readonly StyledProperty<bool> IsCompactProperty =
-            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsCompact));
-
         public static readonly StyledProperty<bool> VisibleFilterButtonProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(VisibleFilterButton));
 
@@ -117,11 +112,7 @@ namespace Avalonia.Controls
             set { SetValue(AreSeparatorsVisibleProperty, value); }
         }
 
-        public bool IsFilterRowVisible
-        {
-            get => GetValue(IsFilterRowVisibleProperty);
-            set => SetValue(IsFilterRowVisibleProperty, value);
-        }
+        // Inline filter row removed; no IsFilterRowVisible on header.
 
         public string FilterValue
         {
@@ -159,12 +150,6 @@ namespace Avalonia.Controls
             set => SetValue(HasDefaultFilterTemplateProperty, value);
         }
 
-        public bool IsCompact
-        {
-            get => GetValue(IsCompactProperty);
-            set => SetValue(IsCompactProperty, value);
-        }
-
         public bool VisibleFilterButton
         {
             get => GetValue(VisibleFilterButtonProperty);
@@ -181,7 +166,7 @@ namespace Avalonia.Controls
         {
             AreSeparatorsVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnAreSeparatorsVisibleChanged(e));
             FilterControlTemplateProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
-            IsFilterRowVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
+            // Inline filter row removed; do not register IsFilterRowVisible changed handler.
             IsFilterPopupOpenProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnIsFilterPopupOpenChanged(e));
             PressedMixin.Attach<DataGridColumnHeader>();
             IsTabStopProperty.OverrideDefaultValue<DataGridColumnHeader>(false);
@@ -204,25 +189,16 @@ namespace Avalonia.Controls
         protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
         {
             base.OnApplyTemplate(e);
-            _defaultFilterBox = e.NameScope.Find<TextBox>("PART_DefaultFilter");
-            _customFilterPresenter = e.NameScope.Find<ContentPresenter>("PART_CustomFilter");
+            // inline PART_CustomFilter removed from templates
             _filterPopup = e.NameScope.Find<Popup>("PART_FilterPopup");
-            var contentPresenter = e.NameScope.Find<ContentPresenter>("PART_ContentPresenter");
-            var filterButton = e.NameScope.Find<ToggleButton>("PART_FilterButton");
-            var sortIcon = e.NameScope.Find<Path>("SortIcon");
             var popupCustom = e.NameScope.Find<ContentPresenter>("PART_PopupCustom");
             var popupDefault = e.NameScope.Find<TextBox>("PART_PopupDefault");
 
             if (popupCustom != null)
             {
-                // If there's a custom template, try to build it and set DataContext to the header
-                if (FilterControlTemplate != null)
-                {
-                    var content = FilterControlTemplate.Build(OwningColumn ?? (object)this);
-                    popupCustom.Content = content;
-                    if (content is Control c)
-                        c.DataContext = this;
-                }
+                // If there's a custom template, set the content template (popup builds content for us)
+                popupCustom.ContentTemplate = FilterControlTemplate;
+                popupCustom.Content = OwningColumn ?? (object)this;
             }
 
             if (popupDefault != null)
@@ -243,67 +219,13 @@ namespace Avalonia.Controls
                 _filterPopup.Opened += FilterPopup_Opened;
                 _filterPopup.Closed += FilterPopup_Closed;
             }
-            // keep references for compact state measurement
-            _contentPresenter = contentPresenter;
-            _filterToggleButton = filterButton;
-            _sortIconPath = sortIcon;
-
-            if (_contentPresenter != null)
-            {
-                _contentPresenter.LayoutUpdated += (s, evt) => UpdateCompactState();
-            }
-            if (_filterToggleButton != null)
-            {
-                _filterToggleButton.LayoutUpdated += (s, evt) => UpdateCompactState();
-            }
-            if (_sortIconPath != null)
-            {
-                _sortIconPath.LayoutUpdated += (s, evt) => UpdateCompactState();
-            }
             UpdateFilterTemplateVisibility();
-            UpdateCompactState();
-        }
-
-        private ContentPresenter _contentPresenter;
-        private ToggleButton _filterToggleButton;
-        private Path _sortIconPath;
-
-        private void UpdateCompactState()
-        {
-            try
-            {
-                var totalWidth = Bounds.Width;
-                if (double.IsNaN(totalWidth) || totalWidth <= 0)
-                {
-                    // cannot determine yet
-                    return;
-                }
-
-                double filterWidth = _filterToggleButton?.Bounds.Width ?? 0;
-                double contentDesired = _contentPresenter?.Bounds.Width ?? 0;
-                double sortWidth = _sortIconPath?.Bounds.Width ?? 0;
-
-                // If content + filter + some padding is larger than available width, we are compact
-                const double padding = 16; // allow space for margins
-                // If sort icon is visible, reserve space for it as well
-                bool sortVisible = (CurrentSortingState != null) || (_sortIconPath != null && _sortIconPath.IsVisible);
-                double reserved = filterWidth + (sortVisible ? sortWidth + 8 : 0);
-                bool compact = (contentDesired + reserved + padding) > totalWidth;
-                IsCompact = compact;
-
-                // decide whether to show filter button: hide it when compact
-                VisibleFilterButton = HasFilter && !compact;
-            }
-            catch
-            {
-                // swallow layout measurement issues
-            }
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
-            if (change.Property == FilterControlTemplateProperty || change.Property == IsFilterRowVisibleProperty)
+            if (change.Property == FilterControlTemplateProperty)
             {
                 UpdateFilterTemplateVisibility();
             }
@@ -311,20 +233,14 @@ namespace Avalonia.Controls
 
         private void UpdateFilterTemplateVisibility()
         {
-            var showCustom = IsFilterRowVisible && FilterControlTemplate != null;
+            // Inline filter row is removed; popup uses the available templates.
             HasCustomFilterTemplate = FilterControlTemplate != null;
-            HasDefaultFilterTemplate = true; // default textbox is always available
+            // Provide the default textbox-based filter in the popup unless a column explicitly opts out.
+            HasDefaultFilterTemplate = true;
             HasFilter = HasCustomFilterTemplate || HasDefaultFilterTemplate;
-            if (_customFilterPresenter != null)
-            {
-                _customFilterPresenter.IsVisible = showCustom;
-                _customFilterPresenter.Content = showCustom ? OwningColumn : null;
-                _customFilterPresenter.ContentTemplate = showCustom ? FilterControlTemplate : null;
-            }
-            if (_defaultFilterBox != null)
-            {
-                _defaultFilterBox.IsVisible = IsFilterRowVisible && !showCustom;
-            }
+            VisibleFilterButton = HasFilter;
+
+            // popup presenters are handled via PART_PopupCustom / PART_PopupDefault
 
             if (_filterPopup != null)
             {
