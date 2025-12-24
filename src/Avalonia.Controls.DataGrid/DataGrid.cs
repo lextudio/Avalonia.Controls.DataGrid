@@ -55,6 +55,9 @@ namespace Avalonia.Controls
 #endif
     partial class DataGrid : TemplatedControl
     {
+        // custom subclasses can inherit the base DataGrid style by default.
+        protected override Type StyleKeyOverride => typeof(DataGrid);
+
         private const string DATAGRID_elementRowsPresenterName = "PART_RowsPresenter";
         private const string DATAGRID_elementColumnHeadersPresenterName = "PART_ColumnHeadersPresenter";
         private const string DATAGRID_elementFrozenColumnScrollBarSpacerName = "PART_FrozenColumnScrollBarSpacer";
