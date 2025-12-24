@@ -19,6 +19,34 @@
       <Setter Property="Background" Value="{Binding Path=GDP, Mode=OneWay, Converter={StaticResource GDPConverter}}" />
     </ControlTheme>
   </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="HyperlinkButton.LinkButton">
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Template">
+        <ControlTemplate TargetType="HyperlinkButton">
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="0"
+                  Padding="0">
+            <TextBlock Text="{TemplateBinding Content}"
+                       Foreground="{TemplateBinding Foreground}"
+                       TextDecorations="Underline"/>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="HyperlinkButton.LinkButton:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource AccentColor2}"/>
+    </Style>
+    <Style Selector="HyperlinkButton.LinkButton:pressed">
+      <Setter Property="Opacity" Value="0.7"/>
+    </Style>
+  </UserControl.Styles>
   <Grid RowDefinitions="Auto,Auto,*">
     <StackPanel Orientation="Vertical" Spacing="4" Grid.Row="0">
       <TextBlock Classes="h2">A control for displaying and interacting with a data source.</TextBlock>
@@ -76,6 +104,16 @@
                                   MaxWidth="350"
                                   IsVisible="{Binding #ShowGDP.IsChecked}"
                                   x:DataType="models:Country" />
+              <DataGridTemplateColumn Header="More">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="models:Country">
+                    <HyperlinkButton Content="Open details"
+                                     Command="{Binding DataContext.ShowCountryDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                     CommandParameter="{Binding Name}"
+                                     Classes="LinkButton"/>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
             </DataGrid.Columns>
             <DataGrid.CellTheme>
               <ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">

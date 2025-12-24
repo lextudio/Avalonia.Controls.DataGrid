@@ -19,17 +19,20 @@ using Avalonia.Interactivity;
 using Avalonia.Input;
 using System.Globalization;
 using Avalonia.VisualTree;
+using System.Windows.Input;
 
 namespace DataGridSample
 {
     public partial class DataGridPage : UserControl
     {
+        public ICommand ShowCountryDetailsCommand { get; }
         private bool _ignoreFlagTextChange;
         private bool _ignoreFlagCheckChange;
 
         public DataGridPage()
         {
             this.InitializeComponent();
+            ShowCountryDetailsCommand = new DelegateCommand<string?>(ShowCountryDetails);
 
             var dataGridSortDescription = DataGridSortDescription.FromPath(nameof(Country.Region), ListSortDirection.Ascending, new ReversedStringComparer());
             var collectionView1 = new DataGridCollectionView(Countries.All);
@@ -279,6 +282,51 @@ namespace DataGridSample
                 i++;
             }
             return -1;
+        }
+
+        private void ShowCountryDetails(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return;
+            var dlg = new Window
+            {
+                Width = 320,
+                Height = 200,
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(16),
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock { Text = $"You clicked: {name}", Classes = { "h3" } },
+                        new TextBlock { Text = "This simulates a hyperlink action; hook into navigation here." }
+                    }
+                }
+            };
+            dlg.Show();
+        }
+
+        private sealed class DelegateCommand<T> : ICommand
+        {
+            private readonly Action<T?> _execute;
+
+            public DelegateCommand(Action<T?> execute)
+            {
+                _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            }
+
+            public event EventHandler? CanExecuteChanged
+            {
+                add { }
+                remove { }
+            }
+
+            public bool CanExecute(object? parameter) => true;
+
+            public void Execute(object? parameter)
+            {
+                _execute((T?)parameter);
+            }
         }
 
         private void OnOffsetFilterChanged(object? sender, TextChangedEventArgs e)
