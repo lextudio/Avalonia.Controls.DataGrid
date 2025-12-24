@@ -20,6 +20,27 @@
     </ControlTheme>
   </UserControl.Resources>
   <UserControl.Styles>
+    <!-- WPF-like hover/selection styling opt-in via class "wpf-theme" -->
+    <Style Selector="DataGrid.wpf-theme DataGridRow:pointerover">
+      <Setter Property="Background" Value="#FFE6F2FF"/>
+    </Style>
+    <Style Selector="DataGrid.wpf-theme DataGridRow:selected">
+      <Setter Property="Background" Value="#FFCCE5FF"/>
+      <Setter Property="BorderBrush" Value="#FF7AA2FF"/>
+    </Style>
+    <Style Selector="DataGrid.wpf-theme DataGridCell:pointerover">
+      <Setter Property="Background" Value="#FFE6F2FF"/>
+    </Style>
+    <Style Selector="DataGrid.wpf-theme DataGridCell:selected">
+      <Setter Property="Background" Value="#FFCCE5FF"/>
+      <Setter Property="BorderBrush" Value="#FF7AA2FF"/>
+    </Style>
+    <Style Selector="DataGrid.wpf-theme DataGridColumnHeader:pointerover">
+      <Setter Property="Background" Value="#FFE6F2FF"/>
+    </Style>
+    <Style Selector="DataGrid.wpf-theme DataGridColumnHeader:pressed">
+      <Setter Property="Background" Value="#FFCCE5FF"/>
+    </Style>
     <Style Selector="HyperlinkButton.LinkButton">
       <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
       <Setter Property="Background" Value="Transparent"/>
@@ -62,6 +83,7 @@
           <StackPanel Orientation="Horizontal"
                       DockPanel.Dock="Top"
                       Spacing="5">
+            <CheckBox x:Name="WpfThemeToggle" IsChecked="False" Content="Use WPF-ish styling" Checked="OnWpfThemeChanged" Unchecked="OnWpfThemeChanged"/>
             <CheckBox x:Name="ShowGDP" IsChecked="True" Content="Toggle GDP Column Visibility"/>
             <TextBlock Text="GDP Width:" VerticalAlignment="Center"/>
             <NumericUpDown x:Name="GDPWidth"

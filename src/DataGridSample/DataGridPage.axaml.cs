@@ -308,6 +308,29 @@ namespace DataGridSample
             dlg.Show();
         }
 
+        private void OnWpfThemeChanged(object? sender, RoutedEventArgs e)
+        {
+            var toggle = this.Get<CheckBox>("WpfThemeToggle");
+            var enable = toggle.IsChecked == true;
+            ApplyThemeClass(enable, "dataGrid1");
+            ApplyThemeClass(enable, "dataGridFilters");
+        }
+
+        private void ApplyThemeClass(bool enable, string gridName)
+        {
+            var dg = this.Get<DataGrid>(gridName);
+            const string cls = "wpf-theme";
+            if (enable)
+            {
+                if (!dg.Classes.Contains(cls))
+                    dg.Classes.Add(cls);
+            }
+            else
+            {
+                dg.Classes.Remove(cls);
+            }
+        }
+
         private void OnGridContextMenuOpening(object? sender, DataGridContextMenuEventArgs e)
         {
             var header = e.Column?.Header?.ToString() ?? "(no column)";
