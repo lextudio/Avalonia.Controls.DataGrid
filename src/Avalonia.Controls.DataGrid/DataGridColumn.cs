@@ -1009,6 +1009,7 @@ namespace Avalonia.Controls
                 DataGridFilterKind.Hex => "Hex or decimal (e.g. 0x20, 32)",
                 DataGridFilterKind.Flags => "Bitmask (e.g. 4 => bit 2 set)",
                 DataGridFilterKind.Regex => "Regex (e.g. ^Item [0-9]+$)",
+                DataGridFilterKind.Numeric => "Supports >, >=, <, <= or range (e.g. 10..20)",
                 _ => "Filter..."
             };
         }

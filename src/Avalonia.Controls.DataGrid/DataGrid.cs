@@ -1105,9 +1105,43 @@ namespace Avalonia.Controls
                         // Invalid regex fallback to contains
                         return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
                     }
+                case DataGridFilterKind.Numeric:
+                    if (!TryParseNumber(valueText, out var cellNum))
+                        return false;
+                    return EvaluateNumericFilter(cellNum, filter);
                 default:
                     return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
             }
+        }
+
+        private static bool EvaluateNumericFilter(long cellValue, string filter)
+        {
+            var f = filter.Trim();
+            if (string.IsNullOrWhiteSpace(f))
+                return true;
+
+            // Range syntax: a..b
+            var rangeParts = f.Split(new[] { ".." }, StringSplitOptions.None);
+            if (rangeParts.Length == 2
+                && TryParseNumber(rangeParts[0], out var min)
+                && TryParseNumber(rangeParts[1], out var max))
+            {
+                return cellValue >= min && cellValue <= max;
+            }
+
+            if (f.StartsWith(">=") && TryParseNumber(f[2..], out var ge))
+                return cellValue >= ge;
+            if (f.StartsWith("<=") && TryParseNumber(f[2..], out var le))
+                return cellValue <= le;
+            if (f.StartsWith(">") && TryParseNumber(f[1..], out var gt))
+                return cellValue > gt;
+            if (f.StartsWith("<") && TryParseNumber(f[1..], out var lt))
+                return cellValue < lt;
+            if (f.StartsWith("=") && TryParseNumber(f[1..], out var eq))
+                return cellValue == eq;
+
+            // fallback: contains
+            return cellValue.ToString().IndexOf(f, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static string GetCellValueAsString(object item, DataGridColumn col)

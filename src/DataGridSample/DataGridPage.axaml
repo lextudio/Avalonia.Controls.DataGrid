@@ -270,7 +270,23 @@
                     PointerExited="OnFiltersPointerExited">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-              <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
+              <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"
+                                  FilterKind="Numeric">
+                <DataGridTextColumn.FilterControlTemplate>
+                  <DataTemplate>
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Index range (min..max or operators)"/>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <NumericUpDown x:Name="IndexMin" Width="90" Minimum="0" Maximum="100" ValueChanged="OnIndexFilterChanged"/>
+                        <TextBlock VerticalAlignment="Center" Text=".."/>
+                        <NumericUpDown x:Name="IndexMax" Width="90" Minimum="0" Maximum="100" ValueChanged="OnIndexFilterChanged"/>
+                        <Button Content="Clear" Click="OnClearIndexFilter"/>
+                      </StackPanel>
+                      <TextBlock FontSize="11" Foreground="Gray" Text="You can also type &gt;10, &lt;=5, or 10..20."/>
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTextColumn.FilterControlTemplate>
+              </DataGridTextColumn>
               <DataGridTextColumn Header="Offset (try 0x20 or 32)" Binding="{Binding OffsetHex}" Width="*"
                                   FilterKind="Hex"
                                   FilterControlTemplate="{StaticResource OffsetFilterTemplate}"/>

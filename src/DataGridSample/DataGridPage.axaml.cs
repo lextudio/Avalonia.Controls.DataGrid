@@ -527,6 +527,8 @@ namespace DataGridSample
 
         private DataGridColumn? GetFlagsColumn() => GetFilterColumn(3);
 
+        private DataGridColumn? GetIndexColumn() => GetFilterColumn(1);
+
         private DataGridColumn? GetDescriptionColumn() => GetFilterColumn(4);
 
         private DataGridColumn? GetFilterColumn(int index)
@@ -553,6 +555,63 @@ namespace DataGridSample
             {
                 column.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
             }
+        }
+
+        private void OnIndexFilterChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+        {
+            var header = FindHeader(sender);
+            var col = GetIndexColumn();
+            if (col == null)
+                return;
+
+            var min = GetNumericUpDownValue(sender, "IndexMin");
+            var max = GetNumericUpDownValue(sender, "IndexMax");
+
+            string filter = null;
+            if (min.HasValue && max.HasValue)
+            {
+                filter = $"{min.Value}..{max.Value}";
+            }
+            else if (min.HasValue)
+            {
+                filter = $">={min.Value}";
+            }
+            else if (max.HasValue)
+            {
+                filter = $"<={max.Value}";
+            }
+
+            col.FilterValue = filter;
+            if (header != null)
+            {
+                header.FilterValue = filter;
+            }
+        }
+
+        private void OnClearIndexFilter(object? sender, RoutedEventArgs e)
+        {
+            var header = FindHeader(sender);
+            var col = GetIndexColumn();
+            col?.SetCurrentValue(DataGridColumn.FilterValueProperty, null);
+
+            // reset controls inside the template
+            if (header != null)
+            {
+                foreach (var num in header.GetVisualDescendants().OfType<NumericUpDown>())
+                {
+                    num.Value = null;
+                }
+            }
+        }
+
+        private int? GetNumericUpDownValue(object? sender, string name)
+        {
+            if (FindHeader(sender) is { } header)
+            {
+                var num = header.GetVisualDescendants().OfType<NumericUpDown>().FirstOrDefault(x => x.Name == name);
+                return (int?)num?.Value;
+            }
+            return null;
         }
     }
 }
