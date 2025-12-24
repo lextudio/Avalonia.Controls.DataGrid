@@ -92,8 +92,8 @@
                     Width="200"
                     Increment="10"
                     Value="200"/>
-            <CheckBox x:Name="FilterToggle" IsChecked="True" Content="Show Filter Row"
-                      ToolTip.Tip="Toggle the per-column filter TextBoxes added in the fork."/>
+            <CheckBox x:Name="FilterToggle" IsChecked="False" Content="Show Filter Row (inline)"
+                      ToolTip.Tip="Toggle the per-column inline filter TextBoxes. Pop-up filters are always available via the header button."/>
             <CheckBox x:Name="ShowDetailsToggle" IsChecked="True" Content="Show Row Details"/>
             <TextBlock Text="Details if GDP ≥" VerticalAlignment="Center"/>
             <NumericUpDown x:Name="DetailsThreshold"
@@ -106,7 +106,7 @@
           </StackPanel>
           <DataGrid Name="dataGrid1" Margin="12" CanUserResizeColumns="True" CanUserReorderColumns="True" CanUserSortColumns="True" HeadersVisibility="All"
                     RowBackground="#1000"
-                    IsFilterRowVisible="{Binding #FilterToggle.IsChecked}"
+                    IsFilterRowVisible="False"
                     RowDetailsVisibilityMode="Visible">
             <DataGrid.Styles>
               <Style Selector="DataGridRow">
@@ -276,7 +276,7 @@
             <CheckBox x:Name="HoverTooltipToggle" IsChecked="True" Content="Show hover tooltip"/>
           </StackPanel>
           <TextBlock DockPanel.Dock="Top" x:Name="HitTestInfo" Margin="0,0,0,8" Text="Click a cell to see hit info."/>
-          <DataGrid Name="dataGridFilters" IsFilterRowVisible="True"
+          <DataGrid Name="dataGridFilters" IsFilterRowVisible="False"
                     CanUserResizeColumns="True"
                     PointerPressed="OnFiltersPointerPressed"
                     PointerMoved="OnFiltersPointerMoved"

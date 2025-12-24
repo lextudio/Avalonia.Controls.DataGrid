@@ -60,6 +60,7 @@ namespace Avalonia.Controls
         private static Lazy<Cursor> _resizeCursor = new Lazy<Cursor>(() => new Cursor(StandardCursorType.SizeWestEast));
         private TextBox _defaultFilterBox;
         private ContentPresenter _customFilterPresenter;
+        private Popup _filterPopup;
 
         public static readonly StyledProperty<IBrush> SeparatorBrushProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, IBrush>(nameof(SeparatorBrush));
@@ -86,6 +87,18 @@ namespace Avalonia.Controls
 
         public static readonly StyledProperty<IDataTemplate> FilterControlTemplateProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, IDataTemplate>(nameof(FilterControlTemplate));
+
+        public static readonly StyledProperty<bool> HasFilterProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(HasFilter));
+
+        public static readonly StyledProperty<bool> HasCustomFilterTemplateProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(HasCustomFilterTemplate));
+
+        public static readonly StyledProperty<bool> HasDefaultFilterTemplateProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(HasDefaultFilterTemplate));
+
+        public static readonly StyledProperty<bool> IsFilterPopupOpenProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsFilterPopupOpen));
 
         public bool AreSeparatorsVisible
         {
@@ -117,6 +130,30 @@ namespace Avalonia.Controls
             set => SetValue(FilterControlTemplateProperty, value);
         }
 
+        public bool HasFilter
+        {
+            get => GetValue(HasFilterProperty);
+            set => SetValue(HasFilterProperty, value);
+        }
+
+        public bool HasCustomFilterTemplate
+        {
+            get => GetValue(HasCustomFilterTemplateProperty);
+            set => SetValue(HasCustomFilterTemplateProperty, value);
+        }
+
+        public bool HasDefaultFilterTemplate
+        {
+            get => GetValue(HasDefaultFilterTemplateProperty);
+            set => SetValue(HasDefaultFilterTemplateProperty, value);
+        }
+
+        public bool IsFilterPopupOpen
+        {
+            get => GetValue(IsFilterPopupOpenProperty);
+            set => SetValue(IsFilterPopupOpenProperty, value);
+        }
+
         static DataGridColumnHeader()
         {
             AreSeparatorsVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnAreSeparatorsVisibleChanged(e));
@@ -145,6 +182,27 @@ namespace Avalonia.Controls
             base.OnApplyTemplate(e);
             _defaultFilterBox = e.NameScope.Find<TextBox>("PART_DefaultFilter");
             _customFilterPresenter = e.NameScope.Find<ContentPresenter>("PART_CustomFilter");
+            _filterPopup = e.NameScope.Find<Popup>("PART_FilterPopup");
+            var popupCustom = e.NameScope.Find<ContentPresenter>("PART_PopupCustom");
+            var popupDefault = e.NameScope.Find<TextBox>("PART_PopupDefault");
+
+            if (popupCustom != null)
+            {
+                // If there's a custom template, try to build it and set DataContext to the header
+                if (FilterControlTemplate != null)
+                {
+                    var content = FilterControlTemplate.Build(OwningColumn ?? (object)this);
+                    popupCustom.Content = content;
+                    if (content is Control c)
+                        c.DataContext = this;
+                }
+            }
+
+            if (popupDefault != null)
+            {
+                popupDefault.Bind(TextBox.TextProperty, new Binding("FilterValue") { Source = this, Mode = BindingMode.TwoWay });
+                popupDefault.Bind(TextBox.WatermarkProperty, new Binding("FilterHint") { Source = this });
+            }
             UpdateFilterTemplateVisibility();
         }
 
@@ -160,6 +218,9 @@ namespace Avalonia.Controls
         private void UpdateFilterTemplateVisibility()
         {
             var showCustom = IsFilterRowVisible && FilterControlTemplate != null;
+            HasCustomFilterTemplate = FilterControlTemplate != null;
+            HasDefaultFilterTemplate = true; // default textbox is always available
+            HasFilter = HasCustomFilterTemplate || HasDefaultFilterTemplate;
             if (_customFilterPresenter != null)
             {
                 _customFilterPresenter.IsVisible = showCustom;
@@ -169,6 +230,11 @@ namespace Avalonia.Controls
             if (_defaultFilterBox != null)
             {
                 _defaultFilterBox.IsVisible = IsFilterRowVisible && !showCustom;
+            }
+
+            if (_filterPopup != null)
+            {
+                _filterPopup.IsOpen = IsFilterPopupOpen;
             }
         }
 

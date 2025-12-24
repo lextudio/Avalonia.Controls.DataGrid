@@ -52,6 +52,21 @@ namespace Avalonia.Controls
             {
                 x.OwningGrid?.OnColumnFilterChanged(x);
             });
+            FilterControlTemplateProperty.Changed.AddClassHandler<DataGridColumn>((x, e) =>
+            {
+                if (x._headerCell != null)
+                {
+                    x._headerCell.HasCustomFilterTemplate = e.NewValue != null;
+                    x._headerCell.HasFilter = x._headerCell.HasCustomFilterTemplate || true;
+                }
+            });
+            FilterKindProperty.Changed.AddClassHandler<DataGridColumn>((x, e) =>
+            {
+                if (x._headerCell != null)
+                {
+                    x._headerCell.FilterHint = GetDefaultFilterHint((DataGridFilterKind)e.NewValue);
+                }
+            });
         }
 
         /// <summary>
@@ -946,6 +961,10 @@ namespace Avalonia.Controls
                     Path = nameof(FilterControlTemplate),
                     Mode = BindingMode.OneWay
                 });
+            // indicate whether this column has a custom filter template
+            result.HasCustomFilterTemplate = FilterControlTemplate != null;
+            // HasFilter if either custom template exists or default textbox is applicable
+            result.HasFilter = result.HasCustomFilterTemplate || true;
             if (OwningGrid != null)
             {
                 result.Bind(DataGridColumnHeader.IsFilterRowVisibleProperty,

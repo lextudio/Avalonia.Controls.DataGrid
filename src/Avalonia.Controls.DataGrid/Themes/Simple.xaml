@@ -1,7 +1,10 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:collections="using:Avalonia.Collections">
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:collections="using:Avalonia.Collections"
+  xmlns:local="using:Avalonia.Controls">
   <Styles.Resources>
+    <local:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+    <StreamGeometry x:Key="DataGridFilterIconPath">M0,0 L16,0 L10,8 L10,18 L6,18 L6,8 Z</StreamGeometry>
     <Thickness x:Key="DataGridTextColumnCellTextBlockMargin">4</Thickness>
     <ControlTheme x:Key="DataGridCellTextBlockTheme"
                   TargetType="TextBlock">
@@ -46,7 +49,7 @@
     </ControlTheme>
 
     <ControlTheme x:Key="{x:Type DataGridColumnHeader}"
-                  TargetType="DataGridColumnHeader">
+            TargetType="DataGridColumnHeader">
       <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -66,32 +69,85 @@
                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                 <Grid ColumnDefinitions="*,Auto">
-                  <ContentPresenter x:Name="PART_ContentPresenter"
-                                    Content="{TemplateBinding Content}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}" />
-
-                  <Path Name="SortIcon"
-                        Grid.Column="1"
-                        Width="8"
-                        Margin="4,0,0,0"
+                  <StackPanel Orientation="Horizontal" Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                      <ContentPresenter x:Name="PART_ContentPresenter"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        ZIndex="0"
+                        ClipToBounds="True" />
+                      <ToggleButton x:Name="PART_FilterButton"
+                        Width="18"
+                        Height="18"
+                        Margin="6,0,0,0"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Data="F1 M -5.215,6.099L 5.215,6.099L 0,0L -5.215,6.099 Z "
-                        Fill="{TemplateBinding Foreground}"
-                        IsVisible="False"
-                        Stretch="Uniform" />
+                        Classes="filter-button"
+                        IsVisible="{TemplateBinding HasFilter}"
+                        IsChecked="{Binding IsFilterPopupOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                        ZIndex="0"
+                        Focusable="True"
+                        IsTabStop="True"
+                        ToolTip.Tip="Open filter"
+                        AutomationProperties.Name="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                        AutomationProperties.HelpText="Open column filter">
+                        <Path Data="{StaticResource DataGridFilterIconPath}"
+                          Fill="{TemplateBinding Foreground}"
+                          Width="12"
+                          Height="12"
+                          Stretch="Uniform"
+                          IsHitTestVisible="False" />
+                      </ToggleButton>
+                  </StackPanel>
+
+                  <Grid Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" ZIndex="3"
+                        ToolTip.Tip="Sort indicator"
+                        AutomationProperties.Name="Sort indicator"
+                        AutomationProperties.HelpText="Indicates sort direction">
+                    <Path Name="SortIcon"
+                      Width="12"
+                      Margin="-6,0,0,0"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      Data="F1 M -5.215,6.099L 5.215,6.099L 0,0L -5.215,6.099 Z "
+                      Fill="{TemplateBinding Foreground}"
+                      IsVisible="False"
+                      Stretch="Uniform"
+                      IsHitTestVisible="False" />
+                  </Grid>
                 </Grid>
 
-                <ContentPresenter x:Name="PART_CustomFilter"
-                                  Margin="0,4,0,2"
-                                  IsVisible="False" />
+                  <ContentPresenter x:Name="PART_CustomFilter"
+                          Margin="0,4,0,2"
+                          IsVisible="False" />
 
+                  <Popup Name="PART_FilterPopup"
+                       Placement="Bottom"
+                       IsOpen="{Binding IsFilterPopupOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                  <Border Background="{DynamicResource ThemeControlMidBrush}"
+                          BorderBrush="{TemplateBinding BorderBrush}"
+                          BorderThickness="1"
+                          Padding="8">
+                    <StackPanel>
+                      <ContentPresenter x:Name="PART_PopupCustom"
+                                        IsVisible="{Binding HasCustomFilterTemplate, RelativeSource={RelativeSource TemplatedParent}}"
+                                        Content="{Binding OwningColumn, RelativeSource={RelativeSource TemplatedParent}}"
+                                        ContentTemplate="{Binding FilterControlTemplate, RelativeSource={RelativeSource TemplatedParent}}" />
+                      <TextBox x:Name="PART_PopupDefault"
+                               IsVisible="{Binding HasCustomFilterTemplate, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BooleanNegationConverter}}"
+                               Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                               Watermark="{Binding FilterHint, RelativeSource={RelativeSource TemplatedParent}}"
+                               Width="200" />
+                    </StackPanel>
+                  </Border>
+                </Popup>
+
+                <!-- Inline filter row hidden by default; popup used instead -->
                 <TextBox x:Name="PART_DefaultFilter"
                          Margin="0,4,0,2"
                          FontSize="12"
                          Height="22"
                          HorizontalAlignment="Stretch"
-                         IsVisible="{TemplateBinding IsFilterRowVisible}"
+                         IsVisible="False"
                          Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                          Watermark="{Binding FilterHint, RelativeSource={RelativeSource TemplatedParent}}" />
               </StackPanel>
