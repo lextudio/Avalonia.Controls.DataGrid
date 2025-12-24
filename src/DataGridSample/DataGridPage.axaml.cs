@@ -455,6 +455,54 @@ namespace DataGridSample
             }
         }
 
+        private void OnFlagTypeChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (sender is not ComboBox cb)
+                return;
+            var header = FindHeader(sender);
+            var col = GetFlagsColumn();
+            if (col == null)
+                return;
+
+            // Adjust default preset based on type selection
+            var tag = (cb.SelectedItem as ComboBoxItem)?.Tag as string;
+            switch (tag)
+            {
+                case "LowerNybble":
+                    SetFlagMask(header, col, 0x0F);
+                    break;
+                case "UpperNybble":
+                    SetFlagMask(header, col, 0xF0);
+                    break;
+                case "FullByte":
+                    SetFlagMask(header, col, 0xFF);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void SetFlagMask(DataGridColumnHeader? header, DataGridColumn col, int mask)
+        {
+            var text = $"0x{mask:X}";
+            col.FilterValue = text;
+            if (header != null)
+            {
+                header.FilterValue = text;
+                UpdateFlagCheckBoxes(header, mask);
+                var box = header.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
+                if (box != null)
+                    box.Text = text;
+                foreach (var preset in header.GetVisualDescendants().OfType<ComboBox>())
+                {
+                    if (preset.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (i.Tag as string) == mask.ToString()) is { } match)
+                    {
+                        preset.SelectedItem = match;
+                    }
+                }
+            }
+        }
+
         private void OnClearFlagsFilter(object? sender, RoutedEventArgs e)
         {
             var header = FindHeader(sender);
