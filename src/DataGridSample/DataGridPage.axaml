@@ -210,18 +210,28 @@
 
       <TabItem Header="Filters (Hex &amp; Flags)">
         <TabItem.Resources>
-          <DataTemplate x:Key="OffsetFilterTemplate">
+          <ControlTemplate x:Key="OffsetFilterTemplate" TargetType="DataGridColumnHeader">
             <StackPanel Spacing="4">
-              <TextBlock Text="Offset (hex or dec)" />
-              <StackPanel Orientation="Horizontal" Spacing="4">
-                <TextBox Width="140"
-                         Watermark="0x20 or 32"
-                         Text="{Binding FilterValue, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Mode=TwoWay}"
-                         TextChanged="OnOffsetFilterChanged"/>
-                <Button Content="Clear" Click="OnClearOffsetFilter"/>
-              </StackPanel>
+              <TextBlock Text="Offset (hex)" />
+              <DockPanel LastChildFill="True">
+                <StackPanel Orientation="Horizontal" Spacing="6" DockPanel.Dock="Left" VerticalAlignment="Center">
+                  <TextBlock Text="0x" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Grid HorizontalAlignment="Left">
+                  <TextBox x:Name="OffsetFilterTextBox" Width="140"
+                           Watermark="20"
+                           TextChanged="OnOffsetFilterChanged"/>
+                  <Button Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"
+                          Click="OnClearOffsetFilter"
+                          Background="Transparent"
+                          BorderBrush="Transparent"
+                          IsVisible="{Binding OwningColumn.FilterValue, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Converter={StaticResource StringNotEmptyToVisibleConverter}}">
+                    <Path Data="M3,3 L13,13 M13,3 L3,13" Stretch="Uniform" Stroke="Black" StrokeThickness="1.5" />
+                  </Button>
+                </Grid>
+              </DockPanel>
             </StackPanel>
-          </DataTemplate>
+          </ControlTemplate>
 
           <DataTemplate x:Key="FlagsFilterTemplate">
             <StackPanel Spacing="4">
@@ -299,7 +309,13 @@
                 </DataGridTextColumn.FilterControlTemplate>
               </DataGridTextColumn>
               <DataGridTextColumn Header="Offset (try 0x20 or 32)" Binding="{Binding OffsetHex}" Width="*"
-                                  FilterKind="Hex" />
+                                  FilterKind="Hex">
+                <DataGridTextColumn.FilterControlTemplate>
+                  <DataTemplate>
+                    <ContentControl Template="{StaticResource OffsetFilterTemplate}"/>
+                  </DataTemplate>
+                </DataGridTextColumn.FilterControlTemplate>
+              </DataGridTextColumn>
               <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="2*" MinWidth="240"
                                   FilterKind="Flags" />
               <DataGridTextColumn Header="Description (regex supported)" Binding="{Binding Description}" Width="3*" MinWidth="220"

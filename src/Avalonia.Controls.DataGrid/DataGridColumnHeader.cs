@@ -65,6 +65,8 @@ namespace Avalonia.Controls
         private bool _isPointerOverInlineFilter;
         private bool _inlineFilterHasFocus;
         private bool _isPointerOverFilterArea;
+        private DataGrid _owningDataGrid;
+        private static DataGridColumnHeader _activeFilterHeader;
 
         public static readonly StyledProperty<IBrush> SeparatorBrushProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, IBrush>(nameof(SeparatorBrush));
@@ -223,6 +225,8 @@ namespace Avalonia.Controls
             PointerMoved += DataGridColumnHeader_PointerMoved;
             PointerEntered += DataGridColumnHeader_PointerEntered;
             PointerExited += DataGridColumnHeader_PointerExited;
+            AttachedToVisualTree += DataGridColumnHeader_AttachedToVisualTree;
+            DetachedFromVisualTree += DataGridColumnHeader_DetachedFromVisualTree;
         }
 
         protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -293,44 +297,41 @@ namespace Avalonia.Controls
 
         private void UpdateInlineVisibility()
         {
-            // Show inline filter content based on hover, focus, or when it has a value
-            bool over = _isPointerOverFilterArea;
+            // Show inline filter content based on hover, focus, active header, or when it has a value
+            bool over = _isPointerOverFilterArea || _isPointerOverInlineFilter || _inlineFilterHasFocus;
             bool hasValue = !string.IsNullOrEmpty(FilterValue);
-            bool showInline = ShowInlineTextFilter && (hasValue || over || _isPointerOverInlineFilter || _inlineFilterHasFocus);
-            
-            bool prevVisible = InlineTextFilterVisible;
+            // If the owning column has an active filter (even if the header's FilterValue
+            // property is empty), treat it as having a value so the custom filter stays visible.
+            bool columnHasActiveFilter = OwningColumn?.IsFiltered ?? false;
+            bool isActive = _activeFilterHeader == this;
+
+            bool showInline = ShowInlineTextFilter && (hasValue || columnHasActiveFilter || over || isActive);
+
             SetValueNoCallback(InlineTextFilterVisibleProperty, showInline);
-            SetValueNoCallback(InlineHexFilterVisibleProperty, false);  // Only one inline at a time
-            
-            if (showInline && !prevVisible)
-            {
-                // Try to focus the inline content when it becomes visible
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                {
-                    try
-                    {
-                        if (_inlineFilterContent is Visual v)
-                        {
-                            var focusable = FindFirstFocusable(v as Control);
-                            (focusable as IInputElement)?.Focus();
-                        }
-                    }
-                    catch { }
-                });
-            }
-            // Hide the filter toggle while inline filter content is visible
+            SetValueNoCallback(InlineHexFilterVisibleProperty, false);
+
+            // Hide the filter indicator while inline filter content is visible
             SetValueNoCallback(VisibleFilterButtonProperty, HasFilter && !showInline);
         }
+
+        // Column filter presence is exposed by the OwningColumn.IsFiltered property.
 
         private void FilterArea_PointerEntered(object sender, PointerEventArgs e)
         {
             _isPointerOverFilterArea = true;
+            // make this header active while hovered so custom filter remains visible
+            ActivateThisHeader();
             UpdateInlineVisibility();
+            // attempt to focus inline content when hovered
+            TryFocusInlineWhenRealized();
         }
 
         private void FilterArea_PointerExited(object sender, PointerEventArgs e)
         {
             _isPointerOverFilterArea = false;
+            // Do not clear the active header here. The active header should remain
+            // until another header explicitly becomes active. This prevents the
+            // inline custom filter from disappearing when it loses hover.
             UpdateInlineVisibility();
         }
 
@@ -369,11 +370,54 @@ namespace Avalonia.Controls
         {
             _inlineFilterHasFocus = true;
             UpdateInlineVisibility();
+            // mark active when focused
+            ActivateThisHeader();
         }
 
         private void InlineFilter_LostFocus(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             _inlineFilterHasFocus = false;
+            // Do not clear active header on lost focus. Keep it active so the
+            // inline custom filter stays visible until another header is
+            // explicitly activated.
+            UpdateInlineVisibility();
+        }
+
+        private void DataGridColumnHeader_AttachedToVisualTree(object sender, VisualTreeAttachmentEventArgs e)
+        {
+            // Find owning DataGrid once attached
+            _owningDataGrid = this.FindAncestorOfType<DataGrid>();
+            if (_owningDataGrid != null)
+            {
+                _owningDataGrid.PointerPressed -= OwningDataGrid_PointerPressed;
+                _owningDataGrid.PointerPressed += OwningDataGrid_PointerPressed;
+            }
+        }
+
+        private void DataGridColumnHeader_DetachedFromVisualTree(object sender, VisualTreeAttachmentEventArgs e)
+        {
+            if (_owningDataGrid != null)
+            {
+                _owningDataGrid.PointerPressed -= OwningDataGrid_PointerPressed;
+                _owningDataGrid = null;
+            }
+        }
+
+        private void OwningDataGrid_PointerPressed(object sender, PointerPressedEventArgs e)
+        {
+            // Do not clear the active header on DataGrid pointer presses. The
+            // active header should only change when another header becomes
+            // active (e.g. via pointer enter or focus). This avoids hiding the
+            // inline filter when interacting with rows or cells.
+        }
+
+        private void ActivateThisHeader()
+        {
+            var prev = _activeFilterHeader;
+            if (prev == this)
+                return;
+            _activeFilterHeader = this;
+            prev?.UpdateInlineVisibility();
             UpdateInlineVisibility();
         }
 
@@ -395,6 +439,47 @@ namespace Avalonia.Controls
                 }
             }
             return null;
+        }
+
+        private void TryFocusInlineWhenRealized()
+        {
+            try
+            {
+                if (_inlineFilterContent == null)
+                    return;
+
+                void DoFocus()
+                {
+                    try
+                    {
+                        if (_inlineFilterContent is Control c)
+                        {
+                            var focusable = FindFirstFocusable(c);
+                            (focusable as IInputElement)?.Focus();
+                        }
+                    }
+                    catch { }
+                }
+
+                // schedule background to ensure children are realized; also attach a fallback in case it's not yet in the tree
+                Avalonia.Threading.Dispatcher.UIThread.Post(DoFocus, Avalonia.Threading.DispatcherPriority.Background);
+
+                void OnAttached(object s, VisualTreeAttachmentEventArgs ev)
+                {
+                    try
+                    {
+                        _inlineFilterContent.AttachedToVisualTree -= OnAttached;
+                    }
+                    catch { }
+                    Avalonia.Threading.Dispatcher.UIThread.Post(DoFocus, Avalonia.Threading.DispatcherPriority.Background);
+                }
+                try
+                {
+                    _inlineFilterContent.AttachedToVisualTree += OnAttached;
+                }
+                catch { }
+            }
+            catch { }
         }
 
         private IInputElement FindFirstOfTypeIn(Control root, Type type)

@@ -50,6 +50,9 @@ namespace Avalonia.Controls
         {
             FilterValueProperty.Changed.AddClassHandler<DataGridColumn>((x, e) =>
             {
+                // Keep IsFiltered in sync when the FilterValue changes. Custom filter
+                // controls may also set IsFiltered explicitly when they take effect.
+                x.IsFiltered = !string.IsNullOrWhiteSpace(x.FilterValue);
                 x.OwningGrid?.OnColumnFilterChanged(x);
             });
             FilterControlTemplateProperty.Changed.AddClassHandler<DataGridColumn>((x, e) =>
@@ -962,6 +965,11 @@ namespace Avalonia.Controls
                     Path = nameof(FilterControlTemplate),
                     Mode = BindingMode.OneWay
                 });
+            // If column doesn't provide a custom template, assign default simple text filter
+            if (FilterControlTemplate == null)
+            {
+                result.FilterControlTemplate = DefaultTextFilterTemplate;
+            }
             result.Bind(DataGridColumnHeader.FilterKindProperty,
                 new Binding
                 {
@@ -991,6 +999,34 @@ namespace Avalonia.Controls
 
         public static readonly StyledProperty<IDataTemplate> FilterControlTemplateProperty =
             AvaloniaProperty.Register<DataGridColumn, IDataTemplate>(nameof(FilterControlTemplate));
+
+        // Default template used when a column doesn't provide a custom filter control.
+        private static readonly IDataTemplate DefaultTextFilterTemplate =
+            new FuncDataTemplate<object>((data, _) =>
+            {
+                // Data is the DataGridColumn (the ContentPresenter's Content is OwningColumn)
+                var col = data as DataGridColumn;
+                var tb = new TextBox { Width = 140, Watermark = "Filter..." };
+                if (col != null)
+                {
+                    // Bind TextBox.Text to the column's FilterValue (TwoWay)
+                    tb.Bind(TextBox.TextProperty, new Binding(nameof(FilterValue)) { Source = col, Mode = BindingMode.TwoWay });
+                }
+                return tb;
+            }, true);
+
+        /// <summary>
+        /// Indicates whether this column currently has an active filter.
+        /// Custom filter controls should set this when their filter takes effect.
+        /// </summary>
+        public static readonly StyledProperty<bool> IsFilteredProperty =
+            AvaloniaProperty.Register<DataGridColumn, bool>(nameof(IsFiltered), defaultValue: false);
+
+        public bool IsFiltered
+        {
+            get => GetValue(IsFilteredProperty);
+            set => SetValue(IsFilteredProperty, value);
+        }
 
         /// <summary>
         /// Gets or sets the filter text used for column filtering (custom extension for ILSpy).

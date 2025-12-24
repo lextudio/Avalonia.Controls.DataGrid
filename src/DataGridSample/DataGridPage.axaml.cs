@@ -378,14 +378,34 @@ namespace DataGridSample
 
         private void OnOffsetFilterChanged(object? sender, TextChangedEventArgs e)
         {
-            var text = (sender as TextBox)?.Text;
-            if (FindHeader(sender) is { } header)
+            var raw = (sender as TextBox)?.Text;
+            if (string.IsNullOrWhiteSpace(raw))
             {
-                header.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+                if (FindHeader(sender) is { } header)
+                {
+                    header.FilterValue = null;
+                    var _hdrCol0 = header.Content as DataGridColumn;
+                    if (_hdrCol0 != null)
+                        _hdrCol0.IsFiltered = false;
+                }
+                else if (GetOffsetColumn() is { } column)
+                {
+                    column.FilterValue = null;
+                    column.IsFiltered = false;
+                }
+                return;
             }
-            else if (GetOffsetColumn() is { } column)
+
+            // Treat typed offset as hexadecimal by default. If it doesn't start with 0x, prefix it.
+            var trimmed = raw.Trim();
+            var normalized = trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? trimmed : "0x" + trimmed;
+
+            // Only set the column's FilterValue to keep the textbox input intact
+            var col = GetOffsetColumn();
+            if (col != null)
             {
-                column.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+                col.FilterValue = normalized;
+                col.IsFiltered = !string.IsNullOrWhiteSpace(col.FilterValue);
             }
         }
 
@@ -394,10 +414,19 @@ namespace DataGridSample
             if (FindHeader(sender) is { } header)
             {
                 header.FilterValue = null;
+                // clear textboxes inside template
+                foreach (var tb in header.GetVisualDescendants().OfType<TextBox>())
+                {
+                    tb.Text = string.Empty;
+                }
+                var _hdrCol1 = header.Content as DataGridColumn;
+                if (_hdrCol1 != null)
+                    _hdrCol1.IsFiltered = false;
             }
             else if (GetOffsetColumn() is { } column)
             {
                 column.FilterValue = null;
+                column.IsFiltered = false;
             }
         }
 
@@ -444,9 +473,13 @@ namespace DataGridSample
             {
                 var text = $"0x{mask:X}";
                 col.FilterValue = text;
+                col.IsFiltered = !string.IsNullOrWhiteSpace(col.FilterValue);
                 if (header != null)
                 {
                     header.FilterValue = text;
+                    var _hdrCol2 = header.Content as DataGridColumn;
+                    if (_hdrCol2 != null)
+                        _hdrCol2.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
                     UpdateFlagCheckBoxes(header, mask);
                     var box = header.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
                     if (box != null)
@@ -486,9 +519,13 @@ namespace DataGridSample
         {
             var text = $"0x{mask:X}";
             col.FilterValue = text;
+            col.IsFiltered = !string.IsNullOrWhiteSpace(col.FilterValue);
             if (header != null)
             {
                 header.FilterValue = text;
+                    var _hdrCol3 = header.Content as DataGridColumn;
+                    if (_hdrCol3 != null)
+                        _hdrCol3.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
                 UpdateFlagCheckBoxes(header, mask);
                 var box = header.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
                 if (box != null)
@@ -518,6 +555,9 @@ namespace DataGridSample
                 {
                     cb.SelectedIndex = -1;
                 }
+                var _hdrCol4 = header.Content as DataGridColumn;
+                if (_hdrCol4 != null)
+                    _hdrCol4.IsFiltered = false;
             }
             _ignoreFlagTextChange = false;
             ApplyFlagsFilter(string.Empty, header, syncCheckBoxes: true);
@@ -528,6 +568,9 @@ namespace DataGridSample
             if (header != null)
             {
                 header.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+                var _hdrCol5 = header.Content as DataGridColumn;
+                if (_hdrCol5 != null)
+                    _hdrCol5.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
                 if (syncCheckBoxes && TryParseMask(text, out var mask))
                 {
                     UpdateFlagCheckBoxes(header, mask);
@@ -546,10 +589,12 @@ namespace DataGridSample
             if (string.IsNullOrWhiteSpace(text))
             {
                 column.FilterValue = null;
+                column.IsFiltered = false;
                 return;
             }
 
             column.FilterValue = text;
+            column.IsFiltered = true;
         }
 
         private void UpdateFlagCheckBoxes(DataGridColumnHeader header, int mask)
@@ -628,11 +673,15 @@ namespace DataGridSample
             if (FindHeader(sender) is { } header)
             {
                 header.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+                var _hdrCol6 = header.Content as DataGridColumn;
+                if (_hdrCol6 != null)
+                    _hdrCol6.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
                 UpdateRegexStatus(header, text);
             }
             else if (GetDescriptionColumn() is { } column)
             {
                 column.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+                column.IsFiltered = !string.IsNullOrWhiteSpace(column.FilterValue);
             }
         }
 
@@ -664,6 +713,9 @@ namespace DataGridSample
             if (header != null)
             {
                 header.FilterValue = filter;
+                var _hdrCol8 = header.Content as DataGridColumn;
+                if (_hdrCol8 != null)
+                    _hdrCol8.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
             }
         }
 
@@ -671,7 +723,11 @@ namespace DataGridSample
         {
             var header = FindHeader(sender);
             var col = GetIndexColumn();
-            col?.SetCurrentValue(DataGridColumn.FilterValueProperty, null);
+            if (col != null)
+            {
+                col.SetCurrentValue(DataGridColumn.FilterValueProperty, null);
+                col.IsFiltered = false;
+            }
 
             // reset controls inside the template
             if (header != null)
