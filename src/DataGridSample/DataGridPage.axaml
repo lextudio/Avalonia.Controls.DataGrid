@@ -241,9 +241,15 @@
                 <CheckBox Content="0x2" Tag="2" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
                 <CheckBox Content="0x4" Tag="4" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
                 <CheckBox Content="0x8" Tag="8" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
+                <ComboBox Width="80" PlaceholderText="Presets" SelectionChanged="OnFlagPresetChanged">
+                  <ComboBoxItem Content="0x3" Tag="3"/>
+                  <ComboBoxItem Content="0x7" Tag="7"/>
+                  <ComboBoxItem Content="0xF" Tag="15"/>
+                </ComboBox>
               </StackPanel>
-              </StackPanel>
-            </DataTemplate>
+              <TextBlock FontSize="11" Foreground="Gray" Text="Pick bits or presets; multiple bits combine with AND."/>
+            </StackPanel>
+          </DataTemplate>
 
           <DataTemplate x:Key="RegexFilterTemplate">
             <StackPanel Spacing="4">
@@ -252,6 +258,7 @@
                        Watermark="^Item [0-9]"
                        Text="{Binding FilterValue, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Mode=TwoWay}"
                        TextChanged="OnRegexFilterChanged"/>
+              <TextBlock x:Name="RegexStatus" FontSize="11" Foreground="Gray" Text="Enter a regex; invalid patterns fallback to contains."/>
             </StackPanel>
           </DataTemplate>
         </TabItem.Resources>

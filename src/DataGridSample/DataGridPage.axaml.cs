@@ -21,6 +21,7 @@ using System.Globalization;
 using Avalonia.VisualTree;
 using System.Windows.Input;
 using Avalonia.Controls.Primitives;
+using System.Text.RegularExpressions;
 
 namespace DataGridSample
 {
@@ -430,6 +431,30 @@ namespace DataGridSample
             ApplyFlagsFilter(text, header, syncCheckBoxes: false);
         }
 
+        private void OnFlagPresetChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (sender is not ComboBox cb)
+                return;
+            var header = FindHeader(sender);
+            var col = GetFlagsColumn();
+            if (col == null)
+                return;
+
+            if (cb.SelectedItem is ComboBoxItem item && item.Tag is string tag && int.TryParse(tag, out var mask))
+            {
+                var text = $"0x{mask:X}";
+                col.FilterValue = text;
+                if (header != null)
+                {
+                    header.FilterValue = text;
+                    UpdateFlagCheckBoxes(header, mask);
+                    var box = header.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
+                    if (box != null)
+                        box.Text = text;
+                }
+            }
+        }
+
         private void OnClearFlagsFilter(object? sender, RoutedEventArgs e)
         {
             var header = FindHeader(sender);
@@ -439,6 +464,11 @@ namespace DataGridSample
                 foreach (var tb in header.GetVisualDescendants().OfType<TextBox>())
                 {
                     tb.Text = string.Empty;
+                }
+                UpdateFlagCheckBoxes(header, 0);
+                foreach (var cb in header.GetVisualDescendants().OfType<ComboBox>())
+                {
+                    cb.SelectedIndex = -1;
                 }
             }
             _ignoreFlagTextChange = false;
@@ -550,6 +580,7 @@ namespace DataGridSample
             if (FindHeader(sender) is { } header)
             {
                 header.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+                UpdateRegexStatus(header, text);
             }
             else if (GetDescriptionColumn() is { } column)
             {
@@ -612,6 +643,31 @@ namespace DataGridSample
                 return (int?)num?.Value;
             }
             return null;
+        }
+
+        private void UpdateRegexStatus(DataGridColumnHeader header, string? pattern)
+        {
+            var status = header.GetVisualDescendants().OfType<TextBlock>().FirstOrDefault(t => t.Name == "RegexStatus");
+            if (status == null)
+                return;
+            if (string.IsNullOrWhiteSpace(pattern))
+            {
+                status.Text = "Enter a regex; invalid patterns fallback to contains.";
+                status.Foreground = Brushes.Gray;
+                return;
+            }
+
+            try
+            {
+                _ = new Regex(pattern);
+                status.Text = "Regex OK";
+                status.Foreground = Brushes.ForestGreen;
+            }
+            catch
+            {
+                status.Text = "Invalid regex (will use contains)";
+                status.Foreground = Brushes.OrangeRed;
+            }
         }
     }
 }
