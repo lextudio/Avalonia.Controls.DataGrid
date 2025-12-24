@@ -33,11 +33,12 @@ namespace Avalonia.Controls
         /// <param name="column">
         /// The generated column.
         /// </param>
-        public DataGridAutoGeneratingColumnEventArgs(string propertyName, Type propertyType, DataGridColumn column)
+        public DataGridAutoGeneratingColumnEventArgs(string propertyName, Type propertyType, DataGridColumn column, PropertyDescriptor propertyDescriptor = null)
         {
             Column = column;
             PropertyName = propertyName;
             PropertyType = propertyType;
+            PropertyDescriptor = propertyDescriptor;
         }
 
         /// <summary>
@@ -62,6 +63,15 @@ namespace Avalonia.Controls
         /// Gets the <see cref="T:System.Type" /> of the property bound to the generated column.
         /// </summary>
         public Type PropertyType
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gets the PropertyDescriptor for the property bound to the generated column (WPF compatibility).
+        /// </summary>
+        public PropertyDescriptor PropertyDescriptor
         {
             get;
             private set;

@@ -11,6 +11,7 @@ using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Utilities;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Reflection;
@@ -1697,6 +1698,7 @@ namespace Avalonia.Controls
                 {
                     string columnHeader = propertyInfo.Name;
                     int columnOrder = DATAGRID_defaultColumnDisplayOrder;
+                    PropertyDescriptor propertyDescriptor = null;
 
                     // Check if DisplayAttribute is defined on the property
                     object[] attributes = propertyInfo.GetCustomAttributes(typeof(DisplayAttribute), true);
@@ -1742,7 +1744,15 @@ namespace Avalonia.Controls
                             insertIndex++;
                         }
                     }
-                    DataGridAutoGeneratingColumnEventArgs columnArgs = GenerateColumn(propertyInfo.PropertyType, propertyInfo.Name, columnHeader);
+                    // Resolve PropertyDescriptor for attribute-based customization (parity with WPF).
+                    var typeForDescriptor = propertyInfo.DeclaringType ?? DataConnection.DataType;
+                    if (typeForDescriptor != null)
+                    {
+                        var props = TypeDescriptor.GetProperties(typeForDescriptor);
+                        propertyDescriptor = props.Find(propertyInfo.Name, false);
+                    }
+
+                    DataGridAutoGeneratingColumnEventArgs columnArgs = GenerateColumn(propertyInfo.PropertyType, propertyInfo.Name, columnHeader, propertyDescriptor);
                     columnOrderPairs.Insert(insertIndex, new KeyValuePair<int, DataGridAutoGeneratingColumnEventArgs>(columnOrder, columnArgs));
                 }
 
@@ -1758,7 +1768,7 @@ namespace Avalonia.Controls
             }
         }
 
-        private static DataGridAutoGeneratingColumnEventArgs GenerateColumn(Type propertyType, string propertyName, string header)
+        private static DataGridAutoGeneratingColumnEventArgs GenerateColumn(Type propertyType, string propertyName, string header, PropertyDescriptor propertyDescriptor = null)
         {
             // Create a new DataBoundColumn for the Property
             DataGridBoundColumn newColumn = GetDataGridColumnFromType(propertyType);
@@ -1770,7 +1780,7 @@ namespace Avalonia.Controls
             {
                 newColumn.FilterKind = DataGridFilterKind.Hex;
             }
-            return new DataGridAutoGeneratingColumnEventArgs(propertyName, propertyType, newColumn);
+            return new DataGridAutoGeneratingColumnEventArgs(propertyName, propertyType, newColumn, propertyDescriptor);
         }
 
         private bool AddGeneratedColumn(DataGridAutoGeneratingColumnEventArgs e)
