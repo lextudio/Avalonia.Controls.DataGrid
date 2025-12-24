@@ -220,6 +220,16 @@
                 <CheckBox Content="0x4" Tag="4" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
                 <CheckBox Content="0x8" Tag="8" Checked="OnFlagCheckChanged" Unchecked="OnFlagCheckChanged"/>
               </StackPanel>
+              </StackPanel>
+            </DataTemplate>
+
+          <DataTemplate x:Key="RegexFilterTemplate">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Description (regex)" />
+              <TextBox Width="200"
+                       Watermark="^Item [0-9]"
+                       Text="{Binding FilterValue, RelativeSource={RelativeSource AncestorType=DataGridColumnHeader}, Mode=TwoWay}"
+                       TextChanged="OnRegexFilterChanged"/>
             </StackPanel>
           </DataTemplate>
         </TabItem.Resources>
@@ -245,7 +255,9 @@
               <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="*"
                                   FilterKind="Flags"
                                   FilterControlTemplate="{StaticResource FlagsFilterTemplate}"/>
-              <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
+              <DataGridTextColumn Header="Description (regex supported)" Binding="{Binding Description}" Width="3*"
+                                  FilterKind="Regex"
+                                  FilterControlTemplate="{StaticResource RegexFilterTemplate}"/>
             </DataGrid.Columns>
           </DataGrid>
         </DockPanel>

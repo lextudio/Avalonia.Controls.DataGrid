@@ -504,6 +504,8 @@ namespace DataGridSample
 
         private DataGridColumn? GetFlagsColumn() => GetFilterColumn(3);
 
+        private DataGridColumn? GetDescriptionColumn() => GetFilterColumn(4);
+
         private DataGridColumn? GetFilterColumn(int index)
         {
             var dg = this.Get<DataGrid>("dataGridFilters");
@@ -515,6 +517,19 @@ namespace DataGridSample
         private DataGridColumnHeader? FindHeader(object? sender)
         {
             return (sender as Control)?.FindAncestorOfType<DataGridColumnHeader>();
+        }
+
+        private void OnRegexFilterChanged(object? sender, TextChangedEventArgs e)
+        {
+            var text = (sender as TextBox)?.Text;
+            if (FindHeader(sender) is { } header)
+            {
+                header.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+            }
+            else if (GetDescriptionColumn() is { } column)
+            {
+                column.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
+            }
         }
     }
 }

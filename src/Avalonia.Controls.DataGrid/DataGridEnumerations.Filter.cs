@@ -12,6 +12,7 @@ namespace Avalonia.Controls
     {
         Text = 0,
         Hex = 1,
-        Flags = 2
+        Flags = 2,
+        Regex = 3
     }
 }

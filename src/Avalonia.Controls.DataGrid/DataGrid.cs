@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Avalonia.Input.Platform;
 using System.ComponentModel.DataAnnotations;
 using Avalonia.Markup.Xaml.MarkupExtensions;
@@ -1093,6 +1094,17 @@ namespace Avalonia.Controls
                         return (flagsVal & flagsMask) == flagsMask;
                     }
                     return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
+                case DataGridFilterKind.Regex:
+                    try
+                    {
+                        var regex = new Regex(filter, RegexOptions.IgnoreCase);
+                        return regex.IsMatch(valueText);
+                    }
+                    catch
+                    {
+                        // Invalid regex fallback to contains
+                        return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
                 default:
                     return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
             }
