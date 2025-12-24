@@ -97,6 +97,12 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<bool> HasDefaultFilterTemplateProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(HasDefaultFilterTemplate));
 
+        public static readonly StyledProperty<bool> IsCompactProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsCompact));
+
+        public static readonly StyledProperty<bool> VisibleFilterButtonProperty =
+            AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(VisibleFilterButton));
+
         public static readonly StyledProperty<bool> IsFilterPopupOpenProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(IsFilterPopupOpen));
 
@@ -148,6 +154,18 @@ namespace Avalonia.Controls
             set => SetValue(HasDefaultFilterTemplateProperty, value);
         }
 
+        public bool IsCompact
+        {
+            get => GetValue(IsCompactProperty);
+            set => SetValue(IsCompactProperty, value);
+        }
+
+        public bool VisibleFilterButton
+        {
+            get => GetValue(VisibleFilterButtonProperty);
+            set => SetValue(VisibleFilterButtonProperty, value);
+        }
+
         public bool IsFilterPopupOpen
         {
             get => GetValue(IsFilterPopupOpenProperty);
@@ -183,6 +201,9 @@ namespace Avalonia.Controls
             _defaultFilterBox = e.NameScope.Find<TextBox>("PART_DefaultFilter");
             _customFilterPresenter = e.NameScope.Find<ContentPresenter>("PART_CustomFilter");
             _filterPopup = e.NameScope.Find<Popup>("PART_FilterPopup");
+            var contentPresenter = e.NameScope.Find<ContentPresenter>("PART_ContentPresenter");
+            var filterButton = e.NameScope.Find<ToggleButton>("PART_FilterButton");
+            var sortIcon = e.NameScope.Find<Path>("SortIcon");
             var popupCustom = e.NameScope.Find<ContentPresenter>("PART_PopupCustom");
             var popupDefault = e.NameScope.Find<TextBox>("PART_PopupDefault");
 
@@ -203,7 +224,61 @@ namespace Avalonia.Controls
                 popupDefault.Bind(TextBox.TextProperty, new Binding("FilterValue") { Source = this, Mode = BindingMode.TwoWay });
                 popupDefault.Bind(TextBox.WatermarkProperty, new Binding("FilterHint") { Source = this });
             }
+            // keep references for compact state measurement
+            _contentPresenter = contentPresenter;
+            _filterToggleButton = filterButton;
+            _sortIconPath = sortIcon;
+
+            if (_contentPresenter != null)
+            {
+                _contentPresenter.LayoutUpdated += (s, evt) => UpdateCompactState();
+            }
+            if (_filterToggleButton != null)
+            {
+                _filterToggleButton.LayoutUpdated += (s, evt) => UpdateCompactState();
+            }
+            if (_sortIconPath != null)
+            {
+                _sortIconPath.LayoutUpdated += (s, evt) => UpdateCompactState();
+            }
             UpdateFilterTemplateVisibility();
+            UpdateCompactState();
+        }
+
+        private ContentPresenter _contentPresenter;
+        private ToggleButton _filterToggleButton;
+        private Path _sortIconPath;
+
+        private void UpdateCompactState()
+        {
+            try
+            {
+                var totalWidth = Bounds.Width;
+                if (double.IsNaN(totalWidth) || totalWidth <= 0)
+                {
+                    // cannot determine yet
+                    return;
+                }
+
+                double filterWidth = _filterToggleButton?.Bounds.Width ?? 0;
+                double contentDesired = _contentPresenter?.Bounds.Width ?? 0;
+                double sortWidth = _sortIconPath?.Bounds.Width ?? 0;
+
+                // If content + filter + some padding is larger than available width, we are compact
+                const double padding = 16; // allow space for margins
+                // If sort icon is visible, reserve space for it as well
+                bool sortVisible = (CurrentSortingState != null) || (_sortIconPath != null && _sortIconPath.IsVisible);
+                double reserved = filterWidth + (sortVisible ? sortWidth + 8 : 0);
+                bool compact = (contentDesired + reserved + padding) > totalWidth;
+                IsCompact = compact;
+
+                // decide whether to show filter button: hide it when compact
+                VisibleFilterButton = HasFilter && !compact;
+            }
+            catch
+            {
+                // swallow layout measurement issues
+            }
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

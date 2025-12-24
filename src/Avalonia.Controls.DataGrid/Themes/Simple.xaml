@@ -70,11 +70,12 @@
                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel Orientation="Horizontal" Grid.Column="0" Spacing="4" VerticalAlignment="Center">
-                      <ContentPresenter x:Name="PART_ContentPresenter"
-                        Content="{TemplateBinding Content}"
-                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                        ZIndex="0"
-                        ClipToBounds="True" />
+                        <ContentPresenter x:Name="PART_ContentPresenter"
+                          Content="{TemplateBinding Content}"
+                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                          ZIndex="0"
+                          ClipToBounds="True"
+                          TextTrimming="CharacterEllipsis" />
                       <ToggleButton x:Name="PART_FilterButton"
                         Width="18"
                         Height="18"
@@ -82,7 +83,7 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Classes="filter-button"
-                        IsVisible="{TemplateBinding HasFilter}"
+                          IsVisible="{TemplateBinding VisibleFilterButton}"
                         IsChecked="{Binding IsFilterPopupOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                         ZIndex="0"
                         Focusable="True"
@@ -99,14 +100,14 @@
                       </ToggleButton>
                   </StackPanel>
 
-                  <Grid Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" ZIndex="3"
+                  <Grid Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" ZIndex="3"
                         ToolTip.Tip="Sort indicator"
                         AutomationProperties.Name="Sort indicator"
                         AutomationProperties.HelpText="Indicates sort direction">
                     <Path Name="SortIcon"
                       Width="12"
-                      Margin="-6,0,0,0"
-                      HorizontalAlignment="Left"
+                      Margin="0,0,4,0"
+                      HorizontalAlignment="Right"
                       VerticalAlignment="Center"
                       Data="F1 M -5.215,6.099L 5.215,6.099L 0,0L -5.215,6.099 Z "
                       Fill="{TemplateBinding Foreground}"
