@@ -71,6 +71,8 @@ namespace Avalonia.Controls
         private TextBox _inlineHexTextBox;
         private bool _inlineTextHasFocus;
         private bool _inlineHexHasFocus;
+        private Button _inlineClearButton;
+        private Button _inlineHexClearButton;
         private Control _filterArea;
         private bool _isPointerOverFilterIcon;
         private bool _isPointerOverInlineText;
@@ -267,6 +269,8 @@ namespace Avalonia.Controls
             _filterToggleButton = e.NameScope.Find<ToggleButton>("PART_FilterButton");
             _inlineTextHost = e.NameScope.Find<Border>("PART_InlineTextHost");
             _inlineHexHost = e.NameScope.Find<Border>("PART_InlineHexHost");
+            _inlineClearButton = e.NameScope.Find<Button>("PART_InlineClearButton");
+            _inlineHexClearButton = e.NameScope.Find<Button>("PART_InlineHexClearButton");
             _filterArea = e.NameScope.Find<Border>("PART_FilterArea");
             var popupCustom = e.NameScope.Find<ContentPresenter>("PART_PopupCustom");
             var popupDefault = e.NameScope.Find<TextBox>("PART_PopupDefault");
@@ -298,6 +302,12 @@ namespace Avalonia.Controls
                 }
             }
 
+            if (_inlineClearButton != null)
+            {
+                _inlineClearButton.Click -= InlineClearButton_Click;
+                _inlineClearButton.Click += InlineClearButton_Click;
+            }
+
             if (_inlineHexHost != null)
             {
                 _inlineHexHost.PointerEntered += InlineHexHost_PointerEntered;
@@ -315,6 +325,12 @@ namespace Avalonia.Controls
                     _inlineHexTextBox.GotFocus += InlineHexBox_GotFocus;
                     _inlineHexTextBox.LostFocus += InlineHexBox_LostFocus;
                 }
+            }
+
+            if (_inlineHexClearButton != null)
+            {
+                _inlineHexClearButton.Click -= InlineHexClearButton_Click;
+                _inlineHexClearButton.Click += InlineHexClearButton_Click;
             }
 
             if (_filterArea != null)
@@ -467,6 +483,27 @@ namespace Avalonia.Controls
         {
             _inlineHexHasFocus = false;
             UpdateInlineVisibility();
+        }
+
+        private void InlineClearButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            try
+            {
+                FilterValue = string.Empty;
+                // keep focus on the inline textbox
+                _inlineTextBox?.Focus();
+            }
+            catch { }
+        }
+
+        private void InlineHexClearButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            try
+            {
+                FilterValue = string.Empty;
+                _inlineHexTextBox?.Focus();
+            }
+            catch { }
         }
 
         private void InlineTextHost_PointerEntered(object sender, PointerEventArgs e)

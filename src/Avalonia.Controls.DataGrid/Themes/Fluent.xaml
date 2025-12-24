@@ -57,6 +57,7 @@
     <x:Double x:Key="DataGridSortIconMinWidth">32</x:Double>
 
     <local:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+    <local:StringNotEmptyToVisibleConverter x:Key="StringNotEmptyToVisibleConverter" />
 
     <StreamGeometry x:Key="DataGridSortIconDescendingPath">M1875 1011l-787 787v-1798h-128v1798l-787 -787l-90 90l941 941l941 -941z</StreamGeometry>
     <StreamGeometry x:Key="DataGridSortIconAscendingPath">M1965 947l-941 -941l-941 941l90 90l787 -787v1798h128v-1798l787 787z</StreamGeometry>
@@ -222,12 +223,29 @@
                                 Margin="0"
                                 Padding="0"
                                 ZIndex="1">
-                          <TextBox Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                   Watermark="{Binding FilterHint, RelativeSource={RelativeSource TemplatedParent}}"
-                                   Width="25"
-                                   MinHeight="0"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center" />
+                          <Grid>
+                            <TextBox x:Name="PART_InlineTextBox"
+                                     Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                     Watermark="{Binding FilterHint, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Width="25"
+                                     Padding="6,4,28,4"
+                                     MinHeight="24"
+                                     HorizontalAlignment="Stretch"
+                                     VerticalAlignment="Center" />
+                            <Button x:Name="PART_InlineClearButton"
+                                    Width="12"
+                                    Height="12"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,6,0"
+                                    Classes="clear-button"
+                                    ZIndex="2"
+                                    Background="Transparent"
+                                    ToolTip.Tip="Clear filter"
+                                    IsVisible="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource StringNotEmptyToVisibleConverter}}">
+                              <Path Data="M2,2 L10,10 M10,2 L2,10" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.6" StrokeLineCap="Square" IsHitTestVisible="False" />
+                            </Button>
+                          </Grid>
                         </Border>
                         <Border x:Name="PART_InlineHexHost"
                                 IsVisible="{TemplateBinding InlineHexFilterVisible}"
@@ -237,17 +255,40 @@
                                 Margin="0"
                                 Padding="0"
                                 ZIndex="1">
-                          <StackPanel Orientation="Horizontal" Spacing="2">
+                          <Grid>
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="Auto" />
+                              <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
                             <TextBlock Text="0x"
                                        VerticalAlignment="Center"
-                                       Foreground="{TemplateBinding Foreground}" />
-                            <TextBox Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       Grid.Column="0"
+                                       Margin="0,0,4,0" />
+                            <TextBox x:Name="PART_InlineHexTextBox"
+                                     Text="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                                      Watermark="{Binding FilterHint, RelativeSource={RelativeSource TemplatedParent}}"
                                      Width="25"
-                                     MinHeight="0"
-                                     HorizontalAlignment="Right"
-                                     VerticalAlignment="Center" />
-                          </StackPanel>
+                                     Padding="6,4,28,4"
+                                     MinHeight="24"
+                                     HorizontalAlignment="Stretch"
+                                     VerticalAlignment="Center"
+                                     Grid.Column="1" />
+                            <Button x:Name="PART_InlineHexClearButton"
+                                    Width="12"
+                                    Height="12"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,6,0"
+                                    Grid.Column="1"
+                                    Classes="clear-button"
+                                    ZIndex="2"
+                                    Background="Transparent"
+                                    ToolTip.Tip="Clear filter"
+                                    IsVisible="{Binding FilterValue, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource StringNotEmptyToVisibleConverter}}">
+                              <Path Data="M2,2 L10,10 M10,2 L2,10" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.6" StrokeLineCap="Square" IsHitTestVisible="False" />
+                            </Button>
+                          </Grid>
                         </Border>
                         <ToggleButton x:Name="PART_FilterButton"
                                       Width="18"
