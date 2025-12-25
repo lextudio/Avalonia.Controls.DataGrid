@@ -1126,53 +1126,22 @@ namespace Avalonia.Controls
                     continue;
                 }
 
-                var kind = col.FilterKind;
-                if (!ApplySingleFilter(item, col, filter, kind))
+                if (!ApplySingleFilter(item, col, filter))
                     return false;
             }
 
             return true;
         }
 
-        private bool ApplySingleFilter(object item, DataGridColumn col, string filter, DataGridFilterKind kind)
+        private bool ApplySingleFilter(object item, DataGridColumn col, string filter)
         {
             var valueText = GetCellValueAsString(item, col);
             if (valueText == null)
                 return false;
-
-            switch (kind)
-            {
-                case DataGridFilterKind.Hex:
-                    if (TryParseNumber(valueText, out var number) && TryParseNumber(filter, out var filterNum))
-                    {
-                        return number.ToString("X").IndexOf(filterNum.ToString("X"), StringComparison.OrdinalIgnoreCase) >= 0
-                               || number.ToString().IndexOf(filterNum.ToString(), StringComparison.OrdinalIgnoreCase) >= 0;
-                    }
-                    return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
-                case DataGridFilterKind.Flags:
-                    if (TryParseNumber(valueText, out var flagsVal) && TryParseNumber(filter, out var flagsMask))
-                    {
-                        return (flagsVal & flagsMask) == flagsMask;
-                    }
-                    return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
-                case DataGridFilterKind.Regex:
-                    try
-                    {
-                        var regex = new Regex(filter, RegexOptions.IgnoreCase);
-                        return regex.IsMatch(valueText);
-                    }
-                    catch
-                    {
-                        // Invalid regex fallback to contains
-                        return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
-                    }
-                case DataGridFilterKind.Numeric:
-                    if (!TryParseNumber(valueText, out var cellNum))
-                        return false;
-                    return EvaluateNumericFilter(cellNum, filter);
-                default:
-                    return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
-            }
+            // Default simple contains search. Specialized filtering (hex/flags/regex/numeric)
+            // should be implemented by custom filter templates which set FilterValue to
+            // an appropriate canonical string or by hooking into the DataGrid's view filter directly.
+            return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool EvaluateNumericFilter(long cellValue, string filter)

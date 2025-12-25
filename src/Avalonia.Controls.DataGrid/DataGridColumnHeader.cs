@@ -105,8 +105,7 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<bool> VisibleFilterButtonProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(VisibleFilterButton));
 
-        public static readonly StyledProperty<DataGridFilterKind> FilterKindProperty =
-            AvaloniaProperty.Register<DataGridColumnHeader, DataGridFilterKind>(nameof(FilterKind), defaultValue: DataGridFilterKind.Text);
+        // FilterKind removed - use FilterControlTemplate per-column for specialized UIs.
 
         public static readonly StyledProperty<bool> ShowInlineTextFilterProperty =
             AvaloniaProperty.Register<DataGridColumnHeader, bool>(nameof(ShowInlineTextFilter));
@@ -173,11 +172,7 @@ namespace Avalonia.Controls
             set => SetValue(VisibleFilterButtonProperty, value);
         }
 
-        public DataGridFilterKind FilterKind
-        {
-            get => GetValue(FilterKindProperty);
-            set => SetValue(FilterKindProperty, value);
-        }
+        // FilterKind removed - use FilterControlTemplate per-column for specialized UIs.
 
         public bool ShowInlineTextFilter
         {
@@ -208,7 +203,6 @@ namespace Avalonia.Controls
             AreSeparatorsVisibleProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.OnAreSeparatorsVisibleChanged(e));
             FilterControlTemplateProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateFilterTemplateVisibility());
             // Inline filter row removed; do not register IsFilterRowVisible changed handler.
-            FilterKindProperty.Changed.AddClassHandler<DataGridColumnHeader>((x, e) => x.UpdateInlineState());
             PressedMixin.Attach<DataGridColumnHeader>();
             IsTabStopProperty.OverrideDefaultValue<DataGridColumnHeader>(false);
             AutomationProperties.IsOffscreenBehaviorProperty.OverrideDefaultValue<DataGridColumnHeader>(IsOffscreenBehavior.FromClip);
@@ -280,15 +274,16 @@ namespace Avalonia.Controls
 
         private void UpdateInlineState()
         {
-            // The inline content always uses the custom FilterControlTemplate when available
-            // For backward compatibility with columns without custom templates, show default textbox/hex inline
+            // The inline content always prefers the custom FilterControlTemplate when available.
+            // For columns without custom templates, the default textbox filter may be shown
+            // if the column opted into the default template.
             bool hasCustomFilter = HasCustomFilterTemplate;
             bool hasDefaultFilter = HasDefaultFilterTemplate && !hasCustomFilter;
-            bool isHex = FilterKind == DataGridFilterKind.Hex;
-            
-            // Show default textbox/hex only if no custom template is provided
-            SetValueNoCallback(ShowInlineTextFilterProperty, (hasCustomFilter || (hasDefaultFilter && !isHex)));
-            SetValueNoCallback(ShowInlineHexFilterProperty, (hasDefaultFilter && isHex));
+
+            // Show default textbox only if no custom template is provided and a default is available
+            SetValueNoCallback(ShowInlineTextFilterProperty, (hasDefaultFilter));
+            // Hex-specific inline behaviors should be provided by a custom FilterControlTemplate.
+            SetValueNoCallback(ShowInlineHexFilterProperty, false);
             VisibleFilterButton = HasFilter;
             SetValueNoCallback(InlineTextFilterVisibleProperty, false);
             SetValueNoCallback(InlineHexFilterVisibleProperty, false);
@@ -305,7 +300,11 @@ namespace Avalonia.Controls
             bool columnHasActiveFilter = OwningColumn?.IsFiltered ?? false;
             bool isActive = _activeFilterHeader == this;
 
-            bool showInline = ShowInlineTextFilter && (hasValue || columnHasActiveFilter || over || isActive);
+            // Inline content should be shown for either the default text filter (when opted-in)
+            // or when a custom FilterControlTemplate is provided for the column.
+            bool inlineCapable = HasCustomFilterTemplate || ShowInlineTextFilter;
+
+            bool showInline = inlineCapable && (hasValue || columnHasActiveFilter || over || isActive);
 
             SetValueNoCallback(InlineTextFilterVisibleProperty, showInline);
             SetValueNoCallback(InlineHexFilterVisibleProperty, false);

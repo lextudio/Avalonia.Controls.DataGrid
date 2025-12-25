@@ -28,6 +28,12 @@ namespace DataGridSample
     public partial class DataGridPage : UserControl
     {
         public ICommand ShowCountryDetailsCommand { get; }
+        // Filter descriptors for the Filters demo
+        private readonly FilterDescriptor _nameFilter = new(nameof(Object));
+        private readonly FilterDescriptor _indexFilter = new(nameof(Object));
+        private readonly FilterDescriptor _offsetFilter = new("OffsetHex");
+        private readonly FilterDescriptor _flagsFilter = new("Flags");
+        private readonly FilterDescriptor _descriptionFilter = new("Description");
         private bool _ignoreFlagTextChange;
         private bool _ignoreFlagCheckChange;
 
@@ -110,7 +116,30 @@ namespace DataGridSample
             addButton.Click += (a, b) => list.Add(new Person());
 
             var dgFilters = this.Get<DataGrid>("dataGridFilters");
-            dgFilters.ItemsSource = BuildFilterDemoItems();
+            // Build items and hook a DataGridCollectionView with combined filter based on descriptors
+            var items = BuildFilterDemoItems().ToList();
+            var collectionViewFilters = new DataGridCollectionView(items);
+            collectionViewFilters.Filter = item =>
+            {
+                // sync name descriptor from column.FilterValue (default inline textbox writes to column.FilterValue)
+                var dgForName = this.Get<DataGrid>("dataGridFilters");
+                if (dgForName != null && dgForName.Columns.Count > 0)
+                {
+                    var nameCol = dgForName.Columns[0];
+                    var fv = nameCol.FilterValue as string;
+                    _nameFilter.RawText = string.IsNullOrWhiteSpace(fv) ? null : fv;
+                }
+
+                // apply descriptors
+                if (!_nameFilter.Matches(item)) return false;
+                if (!_indexFilter.Matches(item)) return false;
+                if (!_offsetFilter.Matches(item)) return false;
+                if (!_flagsFilter.Matches(item)) return false;
+                if (!_descriptionFilter.Matches(item)) return false;
+                return true;
+            };
+
+            dgFilters.ItemsSource = collectionViewFilters;
             dgFilters.AddHandler(InputElement.PointerPressedEvent, OnFiltersPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, handledEventsToo: true);
             dg1.ContextMenuOpening += OnGridContextMenuOpening;
 
@@ -381,6 +410,9 @@ namespace DataGridSample
             var raw = (sender as TextBox)?.Text;
             if (string.IsNullOrWhiteSpace(raw))
             {
+                // clear descriptor
+                _offsetFilter.RawText = null;
+                // also clear header/UI feedback as before
                 if (FindHeader(sender) is { } header)
                 {
                     header.FilterValue = null;
@@ -393,6 +425,9 @@ namespace DataGridSample
                     column.FilterValue = null;
                     column.IsFiltered = false;
                 }
+                // refresh view if present
+                var dg = this.Get<DataGrid>("dataGridFilters");
+                (dg.ItemsSource as DataGridCollectionView)?.Refresh();
                 return;
             }
 
@@ -401,12 +436,16 @@ namespace DataGridSample
             var normalized = trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? trimmed : "0x" + trimmed;
 
             // Only set the column's FilterValue to keep the textbox input intact
+            // Update descriptor
+            _offsetFilter.RawText = normalized;
             var col = GetOffsetColumn();
             if (col != null)
             {
                 col.FilterValue = normalized;
                 col.IsFiltered = !string.IsNullOrWhiteSpace(col.FilterValue);
             }
+            var dg2 = this.Get<DataGrid>("dataGridFilters");
+            (dg2.ItemsSource as DataGridCollectionView)?.Refresh();
         }
 
         private void OnClearOffsetFilter(object? sender, RoutedEventArgs e)
@@ -472,6 +511,8 @@ namespace DataGridSample
             if (cb.SelectedItem is ComboBoxItem item && item.Tag is string tag && int.TryParse(tag, out var mask))
             {
                 var text = $"0x{mask:X}";
+                // descriptor
+                _flagsFilter.RawText = text;
                 col.FilterValue = text;
                 col.IsFiltered = !string.IsNullOrWhiteSpace(col.FilterValue);
                 if (header != null)
@@ -485,6 +526,8 @@ namespace DataGridSample
                     if (box != null)
                         box.Text = text;
                 }
+                var dg = this.Get<DataGrid>("dataGridFilters");
+                (dg.ItemsSource as DataGridCollectionView)?.Refresh();
             }
         }
 
@@ -518,6 +561,7 @@ namespace DataGridSample
         private void SetFlagMask(DataGridColumnHeader? header, DataGridColumn col, int mask)
         {
             var text = $"0x{mask:X}";
+            _flagsFilter.RawText = text;
             col.FilterValue = text;
             col.IsFiltered = !string.IsNullOrWhiteSpace(col.FilterValue);
             if (header != null)
@@ -538,6 +582,8 @@ namespace DataGridSample
                     }
                 }
             }
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            (dg.ItemsSource as DataGridCollectionView)?.Refresh();
         }
 
         private void OnClearFlagsFilter(object? sender, RoutedEventArgs e)
@@ -561,6 +607,8 @@ namespace DataGridSample
             }
             _ignoreFlagTextChange = false;
             ApplyFlagsFilter(string.Empty, header, syncCheckBoxes: true);
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            (dg.ItemsSource as DataGridCollectionView)?.Refresh();
         }
 
         private void ApplyFlagsFilter(string text, DataGridColumnHeader? header, bool syncCheckBoxes)
@@ -571,6 +619,7 @@ namespace DataGridSample
                 var _hdrCol5 = header.Content as DataGridColumn;
                 if (_hdrCol5 != null)
                     _hdrCol5.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
+                _flagsFilter.RawText = string.IsNullOrWhiteSpace(text) ? null : text;
                 if (syncCheckBoxes && TryParseMask(text, out var mask))
                 {
                     UpdateFlagCheckBoxes(header, mask);
@@ -590,11 +639,15 @@ namespace DataGridSample
             {
                 column.FilterValue = null;
                 column.IsFiltered = false;
+                _flagsFilter.RawText = null;
                 return;
             }
 
             column.FilterValue = text;
             column.IsFiltered = true;
+            _flagsFilter.RawText = text;
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            (dg.ItemsSource as DataGridCollectionView)?.Refresh();
         }
 
         private void UpdateFlagCheckBoxes(DataGridColumnHeader header, int mask)
@@ -676,12 +729,18 @@ namespace DataGridSample
                 var _hdrCol6 = header.Content as DataGridColumn;
                 if (_hdrCol6 != null)
                     _hdrCol6.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
+                _descriptionFilter.RawText = string.IsNullOrWhiteSpace(text) ? null : text;
                 UpdateRegexStatus(header, text);
+                var dg = this.Get<DataGrid>("dataGridFilters");
+                (dg.ItemsSource as DataGridCollectionView)?.Refresh();
             }
             else if (GetDescriptionColumn() is { } column)
             {
                 column.FilterValue = string.IsNullOrWhiteSpace(text) ? null : text;
                 column.IsFiltered = !string.IsNullOrWhiteSpace(column.FilterValue);
+                _descriptionFilter.RawText = string.IsNullOrWhiteSpace(text) ? null : text;
+                var dg = this.Get<DataGrid>("dataGridFilters");
+                (dg.ItemsSource as DataGridCollectionView)?.Refresh();
             }
         }
 
@@ -710,6 +769,7 @@ namespace DataGridSample
             }
 
             col.FilterValue = filter;
+            _indexFilter.RawText = filter;
             if (header != null)
             {
                 header.FilterValue = filter;
@@ -717,6 +777,8 @@ namespace DataGridSample
                 if (_hdrCol8 != null)
                     _hdrCol8.IsFiltered = !string.IsNullOrWhiteSpace(header.FilterValue);
             }
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            (dg.ItemsSource as DataGridCollectionView)?.Refresh();
         }
 
         private void OnClearIndexFilter(object? sender, RoutedEventArgs e)
@@ -727,6 +789,7 @@ namespace DataGridSample
             {
                 col.SetCurrentValue(DataGridColumn.FilterValueProperty, null);
                 col.IsFiltered = false;
+                _indexFilter.RawText = null;
             }
 
             // reset controls inside the template
@@ -737,6 +800,8 @@ namespace DataGridSample
                     num.Value = null;
                 }
             }
+            var dg = this.Get<DataGrid>("dataGridFilters");
+            (dg.ItemsSource as DataGridCollectionView)?.Refresh();
         }
 
         private int? GetNumericUpDownValue(object? sender, string name)

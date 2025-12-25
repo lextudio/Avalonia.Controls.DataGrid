@@ -64,13 +64,7 @@ namespace Avalonia.Controls
                     x._headerCell.HasFilter = x._headerCell.HasCustomFilterTemplate || x._headerCell.HasDefaultFilterTemplate;
                 }
             });
-            FilterKindProperty.Changed.AddClassHandler<DataGridColumn>((x, e) =>
-            {
-                if (x._headerCell != null)
-                {
-                    x._headerCell.FilterHint = GetDefaultFilterHint((DataGridFilterKind)e.NewValue);
-                }
-            });
+            // FilterKind removed; FilterHint should be provided by consumers or via FilterControlTemplate.
         }
 
         /// <summary>
@@ -957,7 +951,7 @@ namespace Avalonia.Controls
                     Path = nameof(FilterValue),
                     Mode = BindingMode.TwoWay
                 });
-            result.FilterHint = GetDefaultFilterHint(FilterKind);
+            // Filter hints are provided via explicit FilterControlTemplate or FilterHint can be set by consumers.
             result.Bind(DataGridColumnHeader.FilterControlTemplateProperty,
                 new Binding
                 {
@@ -966,17 +960,13 @@ namespace Avalonia.Controls
                     Mode = BindingMode.OneWay
                 });
             // If column doesn't provide a custom template, assign default simple text filter
-            if (FilterControlTemplate == null)
+            // only when the column explicitly opts in via UseDefaultFilterTemplate.
+            if (FilterControlTemplate == null && UseDefaultFilterTemplate)
             {
                 result.FilterControlTemplate = DefaultTextFilterTemplate;
+                result.HasDefaultFilterTemplate = true;
             }
-            result.Bind(DataGridColumnHeader.FilterKindProperty,
-                new Binding
-                {
-                    Source = this,
-                    Path = nameof(FilterKind),
-                    Mode = BindingMode.OneWay
-                });
+            // FilterKind removed; no binding required.
             // indicate whether this column has a custom filter template
             result.HasCustomFilterTemplate = FilterControlTemplate != null;
             // Header will compute HasFilter based on available templates (custom or default).
@@ -994,8 +984,15 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<string> FilterValueProperty =
             AvaloniaProperty.Register<DataGridColumn, string>(nameof(FilterValue));
 
-        public static readonly StyledProperty<DataGridFilterKind> FilterKindProperty =
-            AvaloniaProperty.Register<DataGridColumn, DataGridFilterKind>(nameof(FilterKind), defaultValue: DataGridFilterKind.Text);
+        // Whether to use the built-in default text filter template for this column.
+        public static readonly StyledProperty<bool> UseDefaultFilterTemplateProperty =
+            AvaloniaProperty.Register<DataGridColumn, bool>(nameof(UseDefaultFilterTemplate), defaultValue: false);
+
+        public bool UseDefaultFilterTemplate
+        {
+            get => GetValue(UseDefaultFilterTemplateProperty);
+            set => SetValue(UseDefaultFilterTemplateProperty, value);
+        }
 
         public static readonly StyledProperty<IDataTemplate> FilterControlTemplateProperty =
             AvaloniaProperty.Register<DataGridColumn, IDataTemplate>(nameof(FilterControlTemplate));
@@ -1037,14 +1034,7 @@ namespace Avalonia.Controls
             set => SetValue(FilterValueProperty, value);
         }
 
-        /// <summary>
-        /// Gets or sets the filter kind, used to drive specialized filter UIs (hex, flags, text). Avalonia fork extension.
-        /// </summary>
-        public DataGridFilterKind FilterKind
-        {
-            get => GetValue(FilterKindProperty);
-            set => SetValue(FilterKindProperty, value);
-        }
+
 
         /// <summary>
         /// Gets or sets a custom filter control template that replaces the default TextBox in the filter row.
@@ -1055,17 +1045,7 @@ namespace Avalonia.Controls
             set => SetValue(FilterControlTemplateProperty, value);
         }
 
-        private static string GetDefaultFilterHint(DataGridFilterKind kind)
-        {
-            return kind switch
-            {
-                DataGridFilterKind.Hex => "Hex or decimal (e.g. 0x20, 32)",
-                DataGridFilterKind.Flags => "Bitmask (e.g. 4 => bit 2 set)",
-                DataGridFilterKind.Regex => "Regex (e.g. ^Item [0-9]+$)",
-                DataGridFilterKind.Numeric => "Supports >, >=, <, <= or range (e.g. 10..20)",
-                _ => "Filter..."
-            };
-        }
+        // Filter hints removed; consumers can set `FilterHint` or provide a `FilterControlTemplate`.
 
 
         /// <summary>
