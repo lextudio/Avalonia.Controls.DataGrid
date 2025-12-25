@@ -260,6 +260,11 @@ namespace Avalonia.Controls
             {
                 UpdateFilterTemplateVisibility();
             }
+            else if (change.Property == FilterValueProperty)
+            {
+                // When FilterValue changes, update visibility to show/hide the inline filter
+                UpdateInlineVisibility();
+            }
         }
 
         private void UpdateFilterTemplateVisibility()
@@ -309,8 +314,8 @@ namespace Avalonia.Controls
             SetValueNoCallback(InlineTextFilterVisibleProperty, showInline);
             SetValueNoCallback(InlineHexFilterVisibleProperty, false);
 
-            // Hide the filter indicator while inline filter content is visible
-            SetValueNoCallback(VisibleFilterButtonProperty, HasFilter && !showInline);
+            // Hide the filter indicator while inline filter content is visible or when the header is disabled
+            SetValueNoCallback(VisibleFilterButtonProperty, IsEnabled && HasFilter && !showInline);
         }
 
         // Column filter presence is exposed by the OwningColumn.IsFiltered property.

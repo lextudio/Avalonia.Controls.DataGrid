@@ -69,6 +69,18 @@ namespace DataGridExtensions
                 case IDataTemplate dataTemplate:
                     column.FilterControlTemplate = dataTemplate;
                     return;
+                case ControlTemplate controlTemplate:
+                    // For ControlTemplate, wrap it as a data template that builds a ContentControl with the template applied
+                    column.FilterControlTemplate = new FuncDataTemplate<object>((data, _) =>
+                    {
+                        var contentControl = new ContentControl
+                        {
+                            DataContext = data,
+                            Template = controlTemplate
+                        };
+                        return contentControl;
+                    });
+                    return;
                 case ITemplate<Control?> controlTemplate:
                     column.FilterControlTemplate = new FuncDataTemplate<object>((data, _) =>
                     {
