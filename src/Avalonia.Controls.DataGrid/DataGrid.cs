@@ -1135,12 +1135,45 @@ namespace Avalonia.Controls
 
         private bool ApplySingleFilter(object item, DataGridColumn col, string filter)
         {
+            // If the column provides a content filter object (e.g. ILSpy's IContentFilter), prefer it.
+            try
+            {
+                var contentFilterObj = col.ContentFilter;
+                if (contentFilterObj != null)
+                {
+                    // Look for a method named IsMatch(object) -> bool
+                    var mi = contentFilterObj.GetType().GetMethod("IsMatch", BindingFlags.Public | BindingFlags.Instance);
+                    if (mi != null)
+                    {
+                        var path = GetBindingPath(col);
+                        object cellValue = null;
+                        if (!string.IsNullOrWhiteSpace(path))
+                        {
+                            var prop = item.GetType().GetProperty(path, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                            if (prop != null)
+                                cellValue = prop.GetValue(item);
+                        }
+                        else
+                        {
+                            cellValue = item;
+                        }
+                        var result = mi.Invoke(contentFilterObj, new[] { cellValue });
+                        if (result is bool b)
+                        {
+                            return b;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // ignore content filter invocation errors and fall back to textual search
+            }
+
             var valueText = GetCellValueAsString(item, col);
             if (valueText == null)
                 return false;
-            // Default simple contains search. Specialized filtering (hex/flags/regex/numeric)
-            // should be implemented by custom filter templates which set FilterValue to
-            // an appropriate canonical string or by hooking into the DataGrid's view filter directly.
+            // Default simple contains search.
             return valueText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 

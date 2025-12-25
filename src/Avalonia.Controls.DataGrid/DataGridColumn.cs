@@ -984,6 +984,10 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<string> FilterValueProperty =
             AvaloniaProperty.Register<DataGridColumn, string>(nameof(FilterValue));
 
+        // Column-level content filter object (object to avoid strong dependency on consumer types)
+        public static readonly StyledProperty<object> ContentFilterProperty =
+            AvaloniaProperty.Register<DataGridColumn, object>(nameof(ContentFilter));
+
         // Whether to use the built-in default text filter template for this column.
         public static readonly StyledProperty<bool> UseDefaultFilterTemplateProperty =
             AvaloniaProperty.Register<DataGridColumn, bool>(nameof(UseDefaultFilterTemplate), defaultValue: false);
@@ -1032,6 +1036,16 @@ namespace Avalonia.Controls
         {
             get => GetValue(FilterValueProperty);
             set => SetValue(FilterValueProperty, value);
+        }
+
+        /// <summary>
+        /// Arbitrary content filter object provided by custom filter controls (e.g. IContentFilter from ILSpy).
+        /// The DataGrid will invoke a method named `IsMatch` on this object with the cell value when present.
+        /// </summary>
+        public object ContentFilter
+        {
+            get => GetValue(ContentFilterProperty);
+            set => SetValue(ContentFilterProperty, value);
         }
 
 
