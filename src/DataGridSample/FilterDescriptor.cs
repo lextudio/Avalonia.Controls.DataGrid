@@ -33,25 +33,55 @@ namespace DataGridSample
         public bool Matches(object item)
         {
             if (!IsActive) return true;
-
             var prop = item.GetType().GetProperty(PropertyName);
             var val = prop?.GetValue(item);
+            var cellStr = val?.ToString() ?? string.Empty;
 
-            // Try numeric path first
-            if (TryGetNumeric(val, out var cellNum) && TryParseNumber(RawText!, out var filterNum))
+            var rt = RawText!.Trim();
+            bool isOperatorOrRange = rt.Contains("..") || rt.StartsWith(">") || rt.StartsWith("<") || rt.StartsWith("=");
+
+            if (isOperatorOrRange)
             {
-                return EvaluateNumericFilter(cellNum, RawText!);
+                // Numeric evaluation for operator/range expressions
+                if (TryGetNumeric(val, out var cellNumOp))
+                    return EvaluateNumericFilter(cellNumOp, rt);
+                if (TryParseAnyNumber(cellStr, out var parsedCellOp))
+                    return EvaluateNumericFilter(parsedCellOp, rt);
+                return false;
             }
 
-            // If raw text looks like a numeric expression (operators or 0x prefix) but cell isn't numeric, try parsing both as numbers
-            if (TryParseNumber(RawText!, out var parsed) && TryParseNumber(val?.ToString() ?? string.Empty, out var parsedCell))
+            // Non-operator: ILSpy-style hex substring matching when sensible
+            var rawNoPrefix = rt.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? rt.Substring(2) : rt;
+            bool RawLooksHex = rawNoPrefix.Length > 0 && IsHexDigits(rawNoPrefix);
+            bool CellLooksHexString = cellStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
+
+            if (PropertyName.Equals("OffsetHex", StringComparison.OrdinalIgnoreCase) || RawLooksHex || CellLooksHexString)
             {
-                return EvaluateNumericFilter(parsedCell, RawText!);
+                var filterHex = rawNoPrefix;
+                if (!string.IsNullOrEmpty(filterHex))
+                {
+                    if (TryGetNumeric(val, out var cellNumHex))
+                    {
+                        var hex8 = cellNumHex.ToString("x8");
+                        if (hex8.IndexOf(filterHex, StringComparison.OrdinalIgnoreCase) >= 0)
+                            return true;
+                        var hex = cellNumHex.ToString("X");
+                        if (hex.IndexOf(filterHex, StringComparison.OrdinalIgnoreCase) >= 0)
+                            return true;
+                    }
+
+                    // If the cell is a hex-like string (0x...), compare without 0x prefix
+                    var cs = cellStr;
+                    if (CellLooksHexString)
+                        cs = cellStr.Substring(2);
+                    if (cs.IndexOf(filterHex, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+                }
             }
 
             // fallback to contains string match
             var s = val?.ToString();
-            return s?.IndexOf(RawText!, StringComparison.OrdinalIgnoreCase) >= 0;
+            return s?.IndexOf(rt, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         static bool TryGetNumeric(object? val, out long result)
@@ -148,6 +178,17 @@ namespace DataGridSample
             if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 return long.TryParse(text.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out value);
             return long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+        }
+
+        static bool IsHexDigits(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            foreach (var c in s)
+            {
+                bool ok = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+                if (!ok) return false;
+            }
+            return true;
         }
     }
 }

@@ -233,7 +233,7 @@
             </StackPanel>
           </ControlTemplate>
 
-          <DataTemplate x:Key="FlagsFilterTemplate">
+          <ControlTemplate x:Key="FlagsFilterTemplate" TargetType="DataGridColumnHeader">
             <StackPanel Spacing="4">
               <TextBlock Text="Flags (bitmask)" />
               <WrapPanel>
@@ -262,9 +262,9 @@
               </WrapPanel>
               <TextBlock FontSize="11" Foreground="Gray" Text="Pick bits or presets; multiple bits combine with AND."/>
             </StackPanel>
-          </DataTemplate>
+          </ControlTemplate>
 
-          <DataTemplate x:Key="RegexFilterTemplate">
+          <ControlTemplate x:Key="RegexFilterTemplate" TargetType="DataGridColumnHeader">
             <StackPanel Spacing="4">
               <TextBlock Text="Description (regex)" />
               <TextBox Width="200"
@@ -273,7 +273,7 @@
                        TextChanged="OnRegexFilterChanged"/>
               <TextBlock x:Name="RegexStatus" FontSize="11" Foreground="Gray" Text="Enter a regex; invalid patterns fallback to contains."/>
             </StackPanel>
-          </DataTemplate>
+          </ControlTemplate>
         </TabItem.Resources>
         <DockPanel Margin="12">
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
@@ -331,14 +331,14 @@
               <DataGridTextColumn Header="Flags (try 4 or 8)" Binding="{Binding Flags}" Width="2*" MinWidth="240">
                 <DataGridTextColumn.FilterControlTemplate>
                   <DataTemplate>
-                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource FlagsFilterTemplate}"/>
+                    <ContentControl Template="{StaticResource FlagsFilterTemplate}"/>
                   </DataTemplate>
                 </DataGridTextColumn.FilterControlTemplate>
               </DataGridTextColumn>
               <DataGridTextColumn Header="Description (regex supported)" Binding="{Binding Description}" Width="3*" MinWidth="220">
                 <DataGridTextColumn.FilterControlTemplate>
                   <DataTemplate>
-                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RegexFilterTemplate}"/>
+                    <ContentControl Template="{StaticResource RegexFilterTemplate}"/>
                   </DataTemplate>
                 </DataGridTextColumn.FilterControlTemplate>
               </DataGridTextColumn>

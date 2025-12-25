@@ -431,9 +431,15 @@ namespace DataGridSample
                 return;
             }
 
-            // Treat typed offset as hexadecimal by default. If it doesn't start with 0x, prefix it.
+            // Treat typed offset as hexadecimal by default for plain numbers. If it doesn't start with 0x, prefix it.
+            // But do not modify operator or range expressions (>,<,=, ..)
             var trimmed = raw.Trim();
-            var normalized = trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? trimmed : "0x" + trimmed;
+            var normalized = trimmed;
+            bool looksLikePlainNumber = !trimmed.Contains("..") && !trimmed.StartsWith(">") && !trimmed.StartsWith("<") && !trimmed.StartsWith("=");
+            if (looksLikePlainNumber && !trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                normalized = "0x" + trimmed;
+            }
 
             // Only set the column's FilterValue to keep the textbox input intact
             // Update descriptor
