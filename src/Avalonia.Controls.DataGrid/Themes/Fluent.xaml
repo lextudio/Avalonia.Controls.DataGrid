@@ -213,7 +213,7 @@
                                       ClipToBounds="True"
                                       VerticalAlignment="Bottom"
                                       TextTrimming="CharacterEllipsis" />
-                    <Border Grid.Column="1" x:Name="PART_FilterArea" Background="Transparent" HorizontalAlignment="Right" IsHitTestVisible="True">
+                    <Border Grid.Column="1" x:Name="PART_FilterArea" Background="Transparent" HorizontalAlignment="Right" IsHitTestVisible="True" Padding="0,0,8,0">
                       <Grid>
                         <!-- Inline filter content - displays custom template when visible -->
                         <ContentPresenter x:Name="PART_InlineFilterContent"
@@ -222,7 +222,7 @@
                                           ContentTemplate="{Binding FilterControlTemplate, RelativeSource={RelativeSource TemplatedParent}}"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
-                                          Margin="0"
+                                          Margin="0,0,6,0"
                                           Padding="0"
                                           ZIndex="1" />
                         <!-- Filter icon indicator - shown when filter is available -->
@@ -232,9 +232,9 @@
                             Width="12"
                             Height="12"
                             Stretch="Uniform"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Margin="4,0,0,0"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center"
+                          Margin="6,0,6,0"
                             IsVisible="{TemplateBinding VisibleFilterButton}"
                             ZIndex="0"
                             IsHitTestVisible="False"

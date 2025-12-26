@@ -337,10 +337,17 @@ namespace Avalonia.Controls
             // until another header explicitly becomes active. This prevents the
             // inline custom filter from disappearing when it loses hover.
             UpdateInlineVisibility();
+            HideInlineIfEmptyAndNotFiltered();
         }
 
         private void InlineFilterContent_PointerEntered(object sender, PointerEventArgs e)
         {
+            // Do not trigger inline filter if the pointer is in the resize region
+            var pos = e.GetPosition(this);
+            if (IsPointerInResizeRegion(pos))
+            {
+                return;
+            }
             _isPointerOverInlineFilter = true;
             UpdateInlineVisibility();
         }
@@ -349,6 +356,23 @@ namespace Avalonia.Controls
         {
             _isPointerOverInlineFilter = false;
             UpdateInlineVisibility();
+            HideInlineIfEmptyAndNotFiltered();
+        }
+
+        private void HideInlineIfEmptyAndNotFiltered()
+        {
+            try
+            {
+                // If inline text filter has no value, is not focused, and the owning column isn't filtered, hide immediately
+                bool hasValue = !string.IsNullOrEmpty(FilterValue);
+                bool columnFiltered = OwningColumn?.IsFiltered ?? false;
+                if (!hasValue && !columnFiltered && !_inlineFilterHasFocus)
+                {
+                    SetValueNoCallback(InlineTextFilterVisibleProperty, false);
+                    VisibleFilterButton = HasFilter;
+                }
+            }
+            catch { }
         }
 
         private void AttachFocusHandlersToTemplate(Control root)
@@ -892,6 +916,7 @@ namespace Avalonia.Controls
 
             OnMouseLeave();
             UpdatePseudoClasses();
+            HideInlineIfEmptyAndNotFiltered();
         }
 
         private void DataGridColumnHeader_PointerPressed(object sender, PointerPressedEventArgs e)
@@ -920,7 +945,23 @@ namespace Avalonia.Controls
 
             Point mousePosition = e.GetPosition(this);
             bool handled = e.Handled;
-            OnMouseLeftButtonDown(ref handled, e, mousePosition);
+            
+            // If this is a double-click in the resize region, perform autosize
+            double distanceFromLeft = mousePosition.X;
+            double distanceFromRight = Bounds.Width - distanceFromLeft;
+            if (e.ClickCount == 2 && _dragColumn == null && (distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth || distanceFromLeft <= DATAGRIDCOLUMNHEADER_resizeRegionWidth))
+            {
+                try
+                {
+                    AutoSizeColumn(distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth ? OwningColumn : OwningGrid.ColumnsInternal.GetPreviousVisibleNonFillerColumn(OwningColumn));
+                    handled = true;
+                }
+                catch { }
+            }
+            else
+            {
+                OnMouseLeftButtonDown(ref handled, e, mousePosition);
+            }
             e.Handled = handled;
 
             UpdatePseudoClasses();
@@ -1115,6 +1156,17 @@ namespace Avalonia.Controls
             IsMouseOver = false;
         }
 
+        private bool IsPointerInResizeRegion(Point mousePosition)
+        {
+            double distanceFromLeft = mousePosition.X;
+            double distanceFromRight = Bounds.Width - distanceFromLeft;
+            if ((_dragMode == DragMode.Resize) || (distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth) || (distanceFromLeft <= DATAGRIDCOLUMNHEADER_resizeRegionWidth))
+            {
+                return true;
+            }
+            return false;
+        }
+
         private void OnMouseMove_BeginReorder(Point mousePosition)
         {
             var dragIndicator = new DataGridColumnHeader
@@ -1123,12 +1175,6 @@ namespace Avalonia.Controls
                 IsEnabled = false,
                 Content = GetDragIndicatorContent(Content, ContentTemplate)
             };
-            if (OwningGrid.ColumnHeaderTheme is { } columnHeaderTheme)
-            {
-                dragIndicator.SetValue(ThemeProperty, columnHeaderTheme, BindingPriority.Template);
-            }
-
-            dragIndicator.PseudoClasses.Add(":dragIndicator");
 
             Control dropLocationIndicator = OwningGrid.DropLocationIndicatorTemplate?.Build();
 
@@ -1197,6 +1243,66 @@ namespace Avalonia.Controls
                 return dataTemplate.Build(content);
             }
             return content;
+        }
+
+        private void AutoSizeColumn(DataGridColumn column)
+        {
+            if (column == null || column.OwningGrid == null)
+                return;
+
+            double maxWidth = 0;
+
+            // Measure header content
+            try
+            {
+                if (column.HeaderCell != null)
+                {
+                    var header = column.HeaderCell;
+                    header.Measure(Size.Infinity);
+                    maxWidth = Math.Max(maxWidth, header.DesiredSize.Width);
+                }
+            }
+            catch { }
+
+            // Measure cell content in visible rows
+            try
+            {
+                var grid = column.OwningGrid;
+                
+                // Access rows through visual tree - find the rows presenter or row containers
+                foreach (var visual in grid.GetVisualDescendants())
+                {
+                    var row = visual as DataGridRow;
+                    if (row == null) continue;
+
+                    // Get the cell content for this column from the row
+                    try
+                    {
+                        var cellContent = column.GetCellContent(row);
+                        if (cellContent != null)
+                        {
+                            cellContent.Measure(Size.Infinity);
+                            maxWidth = Math.Max(maxWidth, cellContent.DesiredSize.Width);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            // Add some extra padding for header separators and margin
+            maxWidth += 8;
+
+            // Respect MinWidth
+            if (!double.IsNaN(column.MinWidth))
+            {
+                maxWidth = Math.Max(maxWidth, column.MinWidth);
+            }
+
+            if (!double.IsInfinity(maxWidth) && maxWidth > 0)
+            {
+                column.Width = new DataGridLength(maxWidth);
+            }
         }
 
 #nullable disable

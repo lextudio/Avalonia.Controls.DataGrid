@@ -100,7 +100,7 @@
                                       ClipToBounds="True"
                                       VerticalAlignment="Bottom"
                                       TextTrimming="CharacterEllipsis" />
-                    <Border Grid.Column="1" x:Name="PART_FilterArea" Background="Transparent" HorizontalAlignment="Right" IsHitTestVisible="True">
+                    <Border Grid.Column="1" x:Name="PART_FilterArea" Background="Transparent" HorizontalAlignment="Right" IsHitTestVisible="True" Padding="0,0,8,0">
                       <Grid>
                         <!-- Inline filter content using custom template -->
                         <ContentPresenter x:Name="PART_InlineFilterContent"
@@ -109,11 +109,11 @@
                                           ContentTemplate="{Binding FilterControlTemplate, RelativeSource={RelativeSource TemplatedParent}}"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
-                                          Margin="0" />
+                                          Margin="0,0,6,0" />
                         <Button x:Name="PART_FilterIcon"
                             Width="18"
                             Height="18"
-                            Margin="0"
+                            Margin="0,0,6,0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Classes="filter-button"
