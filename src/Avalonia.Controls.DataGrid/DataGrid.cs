@@ -927,8 +927,10 @@ namespace Avalonia.Controls
             if (e.NewValue is Style style)
             {
                 // Apply cell style by adding it to the grid's Styles collection
-                Styles.Remove(style);
-                Styles.Add(style);
+                if (Styles.Remove(style))
+                {
+                    Styles.Add(style);
+                }
             }
         }
 
