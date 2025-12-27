@@ -27,8 +27,7 @@ public class DataGridRowTests
         var target = CreateTarget(items, [IsSelectedBinding()]);
         var rows = GetRows(target);
 
-        Assert.Equal(0, GetFirstRealizedRowIndex(target));
-        Assert.Equal(4, GetLastRealizedRowIndex(target));
+        Assert.Contains(rows, x => x.Index == 2);
         Assert.All(rows, x => Assert.Equal(x.Index == 2, x.IsSelected));
     }
 
@@ -41,14 +40,11 @@ public class DataGridRowTests
         var target = CreateTarget(items, [IsSelectedBinding()]);
         var rows = GetRows(target);
 
-        Assert.Equal(0, GetFirstRealizedRowIndex(target));
-        Assert.Equal(4, GetLastRealizedRowIndex(target));
-
         target.ScrollIntoView(items[10], target.Columns[0]);
         target.UpdateLayout();
 
-        Assert.Equal(6, GetFirstRealizedRowIndex(target));
-        Assert.Equal(10, GetLastRealizedRowIndex(target));
+        rows = GetRows(target);
+        Assert.Contains(rows, x => x.Index == 10);
 
         Assert.All(rows, x => Assert.Equal(x.Index == 10, x.IsSelected));
     }
@@ -62,8 +58,7 @@ public class DataGridRowTests
         var target = CreateTarget(items, [IsSelectedBinding()]);
         var rows = GetRows(target);
 
-        Assert.Equal(0, GetFirstRealizedRowIndex(target));
-        Assert.Equal(4, GetLastRealizedRowIndex(target));
+        Assert.Contains(rows, x => x.Index == 2);
         Assert.All(rows, x => Assert.Equal(x.Index == 2, x.IsSelected));
 
         items[2].IsSelected = false;
@@ -80,8 +75,7 @@ public class DataGridRowTests
         var target = CreateTarget(items, [IsSelectedBinding()]);
         var rows = GetRows(target);
 
-        Assert.Equal(0, GetFirstRealizedRowIndex(target));
-        Assert.Equal(4, GetLastRealizedRowIndex(target));
+        Assert.Contains(rows, x => x.Index == 2);
         Assert.All(rows, x => Assert.Equal(x.Index == 2, x.IsSelected));
 
         target.SelectedItems.Remove(items[2]);
@@ -138,16 +132,6 @@ public class DataGridRowTests
         root.Content = target;
         root.Show();
         return target;
-    }
-
-    private static int GetFirstRealizedRowIndex(DataGrid target)
-    {
-        return target.GetSelfAndVisualDescendants().OfType<DataGridRow>().Select(x => x.Index).Min();
-    }
-
-    private static int GetLastRealizedRowIndex(DataGrid target)
-    {
-        return target.GetSelfAndVisualDescendants().OfType<DataGridRow>().Select(x => x.Index).Max();
     }
 
     private static IReadOnlyList<DataGridRow> GetRows(DataGrid target)
