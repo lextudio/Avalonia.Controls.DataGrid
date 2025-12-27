@@ -269,16 +269,52 @@ namespace Avalonia.Controls
 
         private void UpdateFilterTemplateVisibility()
         {
+            bool filtersEnabled = _owningDataGrid?.EnableColumnFilters ?? true;
+
+            if (!filtersEnabled)
+            {
+                if (_filterArea != null)
+                {
+                    _filterArea.IsHitTestVisible = false;
+                    _filterArea.IsVisible = false;
+                }
+                HasCustomFilterTemplate = false;
+                HasDefaultFilterTemplate = false;
+                HasFilter = false;
+                SetValueNoCallback(ShowInlineTextFilterProperty, false);
+                SetValueNoCallback(ShowInlineHexFilterProperty, false);
+                SetValueNoCallback(InlineTextFilterVisibleProperty, false);
+                SetValueNoCallback(InlineHexFilterVisibleProperty, false);
+                VisibleFilterButton = false;
+                return;
+            }
+
             // Inline filter row is removed; popup uses the available templates.
             HasCustomFilterTemplate = FilterControlTemplate != null;
             // Provide the default textbox-based filter in the popup unless a column explicitly opts out.
             HasDefaultFilterTemplate = true;
             HasFilter = HasCustomFilterTemplate || HasDefaultFilterTemplate;
+            if (_filterArea != null)
+            {
+                _filterArea.IsVisible = true;
+                _filterArea.IsHitTestVisible = true;
+            }
             UpdateInlineState();
         }
 
         private void UpdateInlineState()
         {
+            bool filtersEnabled = _owningDataGrid?.EnableColumnFilters ?? true;
+            if (!filtersEnabled)
+            {
+                SetValueNoCallback(ShowInlineTextFilterProperty, false);
+                SetValueNoCallback(ShowInlineHexFilterProperty, false);
+                SetValueNoCallback(InlineTextFilterVisibleProperty, false);
+                SetValueNoCallback(InlineHexFilterVisibleProperty, false);
+                VisibleFilterButton = false;
+                return;
+            }
+
             // The inline content always prefers the custom FilterControlTemplate when available.
             // For columns without custom templates, the default textbox filter may be shown
             // if the column opted into the default template.
@@ -297,6 +333,15 @@ namespace Avalonia.Controls
 
         private void UpdateInlineVisibility()
         {
+            bool filtersEnabled = _owningDataGrid?.EnableColumnFilters ?? true;
+            if (!filtersEnabled)
+            {
+                SetValueNoCallback(InlineTextFilterVisibleProperty, false);
+                SetValueNoCallback(InlineHexFilterVisibleProperty, false);
+                SetValueNoCallback(VisibleFilterButtonProperty, false);
+                return;
+            }
+
             // Show inline filter content based on hover, focus, active header, or when it has a value
             bool over = _isPointerOverFilterArea || _isPointerOverInlineFilter || _inlineFilterHasFocus;
             bool hasValue = !string.IsNullOrEmpty(FilterValue);
@@ -770,18 +815,21 @@ namespace Avalonia.Controls
         /// <summary>
         /// Determines whether a column can be resized by dragging the border of its header.  If star sizing
         /// is being used, there are special conditions that can prevent a column from being resized:
-        /// 1. The column is the last visible column.
-        /// 2. All columns are constrained by either their maximum or minimum values.
+        /// 1. The column is the last visible column and uses star sizing.
+        /// 2. All star-sized columns are constrained by either their maximum or minimum values.
         /// </summary>
         /// <param name="column">Column to check.</param>
         /// <returns>Whether or not the column can be resized by dragging its header.</returns>
         private static bool CanResizeColumn(DataGridColumn column)
         {
-            if (column.OwningGrid != null && column.OwningGrid.ColumnsInternal != null && column.OwningGrid.UsesStarSizing &&
-                (column.OwningGrid.ColumnsInternal.LastVisibleColumn == column || !MathUtilities.AreClose(column.OwningGrid.ColumnsInternal.VisibleEdgedColumnsWidth, column.OwningGrid.CellsWidth)))
+            // Only apply star sizing restrictions to columns that actually use star sizing
+            // Fixed-width columns should always be resizable regardless of grid state
+            if (column.OwningGrid != null && column.OwningGrid.ColumnsInternal != null && column.Width.IsStar && column.OwningGrid.UsesStarSizing &&
+                (/*column.OwningGrid.ColumnsInternal.LastVisibleColumn == column || */!MathUtilities.AreClose(column.OwningGrid.ColumnsInternal.VisibleEdgedColumnsWidth, column.OwningGrid.CellsWidth)))
             {
                 return false;
             }
+
             return column.ActualCanUserResize;
         }
 
@@ -814,15 +862,12 @@ namespace Avalonia.Controls
                 double distanceFromLeft = mousePosition.X;
                 double distanceFromRight = Bounds.Width - distanceFromLeft;
                 DataGridColumn currentColumn = OwningColumn;
-                DataGridColumn previousColumn = null;
-                if (!(OwningColumn is DataGridFillerColumn))
-                {
-                    previousColumn = OwningGrid.ColumnsInternal.GetPreviousVisibleNonFillerColumn(currentColumn);
-                }
+                DataGridColumn previousColumn = OwningGrid.ColumnsInternal.GetPreviousVisibleNonFillerColumn(currentColumn);
+                DataGridColumn rightEdgeTarget = currentColumn is DataGridFillerColumn ? previousColumn : currentColumn;
 
-                if (_dragMode == DragMode.MouseDown && _dragColumn == null && (distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth))
+                if (_dragMode == DragMode.MouseDown && _dragColumn == null && (distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth) && rightEdgeTarget != null)
                 {
-                    handled = TrySetResizeColumn(currentColumn);
+                    handled = TrySetResizeColumn(rightEdgeTarget);
                 }
                 else if (_dragMode == DragMode.MouseDown && _dragColumn == null && distanceFromLeft <= DATAGRIDCOLUMNHEADER_resizeRegionWidth && previousColumn != null)
                 {
@@ -930,11 +975,16 @@ namespace Avalonia.Controls
             if (_filterArea != null && e.Source is Visual srcVisual)
             {
                 var cur = srcVisual;
+                int depth = 0;
                 while (cur != null)
                 {
                     if (cur == (Visual)_filterArea)
+                    {
                         return;
+                    }
                     cur = cur.VisualParent as Visual;
+                    depth++;
+                    if (depth > 20) break; // Safety limit
                 }
             }
 
@@ -953,7 +1003,9 @@ namespace Avalonia.Controls
             {
                 try
                 {
-                    AutoSizeColumn(distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth ? OwningColumn : OwningGrid.ColumnsInternal.GetPreviousVisibleNonFillerColumn(OwningColumn));
+                    var previous = OwningGrid.ColumnsInternal.GetPreviousVisibleNonFillerColumn(OwningColumn);
+                    var rightTarget = OwningColumn is DataGridFillerColumn ? previous : OwningColumn;
+                    AutoSizeColumn(distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth ? rightTarget : previous);
                     handled = true;
                 }
                 catch { }
@@ -1401,15 +1453,14 @@ namespace Avalonia.Controls
             double distanceFromLeft = mousePosition.X;
             double distanceFromRight = Bounds.Width - distanceFromLeft;
             DataGridColumn currentColumn = OwningColumn;
-            DataGridColumn previousColumn = null;
+            DataGridColumn previousColumn = OwningGrid.ColumnsInternal.GetPreviousVisibleNonFillerColumn(currentColumn);
+            DataGridColumn rightEdgeTarget = currentColumn is DataGridFillerColumn ? previousColumn : currentColumn;
 
-            if (!(OwningColumn is DataGridFillerColumn))
-            {
-                previousColumn = OwningGrid.ColumnsInternal.GetPreviousVisibleNonFillerColumn(currentColumn);
-            }
+            bool overRightEdge = distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth;
+            bool overLeftEdge = distanceFromLeft <= DATAGRIDCOLUMNHEADER_resizeRegionWidth;
 
-            if ((distanceFromRight <= DATAGRIDCOLUMNHEADER_resizeRegionWidth && currentColumn != null && CanResizeColumn(currentColumn)) ||
-                (distanceFromLeft <= DATAGRIDCOLUMNHEADER_resizeRegionWidth && previousColumn != null && CanResizeColumn(previousColumn)))
+            if ((overRightEdge && rightEdgeTarget != null && CanResizeColumn(rightEdgeTarget)) ||
+                (overLeftEdge && previousColumn != null && CanResizeColumn(previousColumn)))
             {
                 var resizeCursor = _resizeCursor.Value;
                 if (Cursor != resizeCursor)

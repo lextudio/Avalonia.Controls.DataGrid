@@ -504,6 +504,13 @@ namespace Avalonia.Controls
         internal void OnFillerColumnWidthNeeded(double finalWidth)
         {
             DataGridFillerColumn fillerColumn = ColumnsInternal.FillerColumn;
+            if (!UseFillerColumn)
+            {
+                fillerColumn.FillerWidth = 0;
+                fillerColumn.IsRepresented = false;
+                return;
+            }
+
             double totalColumnsWidth = ColumnsInternal.VisibleEdgedColumnsWidth + ActualRowHeaderWidth;
             if (finalWidth - totalColumnsWidth > LayoutHelper.LayoutEpsilon)
             {
@@ -513,6 +520,8 @@ namespace Avalonia.Controls
             {
                 fillerColumn.FillerWidth = 0;
             }
+
+            fillerColumn.IsRepresented = fillerColumn.FillerWidth > 0;
         }
 
         internal void OnInsertedColumn_PostNotification(DataGridCellCoordinates newCurrentCellCoordinates, int newDisplayIndex)

@@ -343,6 +343,12 @@ namespace Avalonia.Controls
         public static readonly StyledProperty<DataGridHeadersVisibility> HeadersVisibilityProperty =
             AvaloniaProperty.Register<DataGrid, DataGridHeadersVisibility>(nameof(HeadersVisibility));
 
+        public static readonly StyledProperty<bool> EnableColumnFiltersProperty =
+            AvaloniaProperty.Register<DataGrid, bool>(nameof(EnableColumnFilters), true);
+
+        public static readonly StyledProperty<bool> UseFillerColumnProperty =
+            AvaloniaProperty.Register<DataGrid, bool>(nameof(UseFillerColumn), true);
+
         /// <summary>
         /// Gets or sets a value that indicates the visibility of row and column headers.
         /// </summary>
@@ -350,6 +356,25 @@ namespace Avalonia.Controls
         {
             get { return GetValue(HeadersVisibilityProperty); }
             set { SetValue(HeadersVisibilityProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets whether column filter UI is enabled for this grid. When false, column headers do not show filter glyphs or inline filter editors.
+        /// </summary>
+        public bool EnableColumnFilters
+        {
+            get { return GetValue(EnableColumnFiltersProperty); }
+            set { SetValue(EnableColumnFiltersProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets whether the grid renders a filler column to occupy remaining header space.
+        /// When false, the last real column owns the right edge (WPF-like resizing).
+        /// </summary>
+        public bool UseFillerColumn
+        {
+            get { return GetValue(UseFillerColumnProperty); }
+            set { SetValue(UseFillerColumnProperty, value); }
         }
 
         public static readonly StyledProperty<IBrush> HorizontalGridLinesBrushProperty =

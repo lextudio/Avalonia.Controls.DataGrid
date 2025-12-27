@@ -216,15 +216,24 @@ namespace Avalonia.Controls.Primitives
             }
 
             // Arrange filler
-            OwningGrid.OnFillerColumnWidthNeeded(finalSize.Width);
             DataGridFillerColumn fillerColumn = OwningGrid.ColumnsInternal.FillerColumn;
-            if (fillerColumn.FillerWidth > 0)
+            if (OwningGrid.UseFillerColumn)
             {
-                fillerColumn.HeaderCell.IsVisible = true;
-                fillerColumn.HeaderCell.Arrange(new Rect(scrollingLeftEdge, 0, fillerColumn.FillerWidth, finalSize.Height));
+                OwningGrid.OnFillerColumnWidthNeeded(finalSize.Width);
+                if (fillerColumn.FillerWidth > 0)
+                {
+                    fillerColumn.HeaderCell.IsVisible = true;
+                    fillerColumn.HeaderCell.Arrange(new Rect(scrollingLeftEdge, 0, fillerColumn.FillerWidth, finalSize.Height));
+                }
+                else
+                {
+                    fillerColumn.HeaderCell.IsVisible = false;
+                }
             }
             else
             {
+                // Hide and skip arranging the filler when disabled.
+                fillerColumn.FillerWidth = 0;
                 fillerColumn.HeaderCell.IsVisible = false;
             }
 
@@ -402,16 +411,33 @@ namespace Avalonia.Controls.Primitives
 
             // Add the filler column if it's not represented.  We won't know whether we need it or not until Arrange
             DataGridFillerColumn fillerColumn = OwningGrid.ColumnsInternal.FillerColumn;
-            if (!fillerColumn.IsRepresented)
+            if (!OwningGrid.UseFillerColumn)
             {
-                Debug.Assert(!Children.Contains(fillerColumn.HeaderCell));
+                // Ensure the filler header is removed when filler is disabled.
+                if (fillerColumn.IsRepresented && Children.Contains(fillerColumn.HeaderCell))
+                {
+                    Children.Remove(fillerColumn.HeaderCell);
+                }
+                fillerColumn.IsRepresented = false;
+                fillerColumn.HeaderCell.IsVisible = false;
+            }
+            else if (!fillerColumn.IsRepresented)
+            {
                 fillerColumn.HeaderCell.AreSeparatorsVisible = false;
+                // If the filler header is still in the visual tree from a previous layout pass, remove it first.
+                if (Children.Contains(fillerColumn.HeaderCell))
+                {
+                    Children.Remove(fillerColumn.HeaderCell);
+                }
                 Children.Insert(OwningGrid.ColumnsInternal.Count, fillerColumn.HeaderCell);
                 fillerColumn.IsRepresented = true;
                 // Optimize for the case where we don't need the filler cell 
                 fillerColumn.HeaderCell.IsVisible = false;
             }
-            fillerColumn.HeaderCell.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            if (OwningGrid.UseFillerColumn)
+            {
+                fillerColumn.HeaderCell.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            }
 
             if (DragIndicator != null)
             {

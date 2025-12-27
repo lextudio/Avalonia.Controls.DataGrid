@@ -48,7 +48,9 @@ namespace Avalonia.Controls
             DataGridColumnHeader headerCell = base.CreateHeader();
             if (headerCell != null)
             {
-                headerCell.IsEnabled = false;
+                // Keep the filler header hit-testable so the right-edge resize of the last real column works.
+                headerCell.IsEnabled = true;
+                headerCell.IsHitTestVisible = true;
             }
             return headerCell;
         }
