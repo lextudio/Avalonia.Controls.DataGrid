@@ -2648,7 +2648,7 @@ namespace Avalonia.Controls
             if (e.TryGetPosition(this, out var point))
             {
                 var hit = HitTestCell(point);
-                var args = new DataGridContextMenuEventArgs(hit.Item, hit.Column);
+                var args = new DataGridContextMenuEventArgs(hit.Item, hit.Column, e.Source);
                 ContextMenuOpening?.Invoke(this, args);
                 if (args.Flyout != null)
                 {
