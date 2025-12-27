@@ -825,7 +825,7 @@ namespace Avalonia.Controls
             // Only apply star sizing restrictions to columns that actually use star sizing
             // Fixed-width columns should always be resizable regardless of grid state
             if (column.OwningGrid != null && column.OwningGrid.ColumnsInternal != null && column.Width.IsStar && column.OwningGrid.UsesStarSizing &&
-                (/*column.OwningGrid.ColumnsInternal.LastVisibleColumn == column || */!MathUtilities.AreClose(column.OwningGrid.ColumnsInternal.VisibleEdgedColumnsWidth, column.OwningGrid.CellsWidth)))
+                (!MathUtilities.AreClose(column.OwningGrid.ColumnsInternal.VisibleEdgedColumnsWidth, column.OwningGrid.CellsWidth)))
             {
                 return false;
             }
@@ -980,7 +980,7 @@ namespace Avalonia.Controls
                 {
                     if (cur == (Visual)_filterArea)
                     {
-                        return;
+                        //return;
                     }
                     cur = cur.VisualParent as Visual;
                     depth++;
