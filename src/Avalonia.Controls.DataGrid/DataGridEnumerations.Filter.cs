@@ -8,7 +8,7 @@ namespace Avalonia.Controls
     /// <summary>
     /// Simple filter kind hints for column filters. Avalonia fork extension.
     /// </summary>
-    public enum DataGridFilterKind
+    internal enum DataGridFilterKind
     {
         Text = 0,
         Hex = 1,

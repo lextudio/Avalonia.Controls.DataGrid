@@ -555,16 +555,13 @@ namespace Avalonia.Controls
     /// <summary>
     /// EventArgs used for the DataGrid's LoadingRowGroup and UnloadingRowGroup events
     /// </summary>
-#if !DATAGRID_INTERNAL
-    public
-#endif
-    class DataGridRowGroupHeaderEventArgs : EventArgs
+    internal class DataGridRowGroupHeaderEventArgs : EventArgs
     {
         /// <summary>
         /// Constructs a DataGridRowGroupHeaderEventArgs instance
         /// </summary>
         /// <param name="rowGroupHeader"></param>
-        public DataGridRowGroupHeaderEventArgs(DataGridRowGroupHeader rowGroupHeader)
+    internal DataGridRowGroupHeaderEventArgs(DataGridRowGroupHeader rowGroupHeader)
         {
             RowGroupHeader = rowGroupHeader;
         }
@@ -572,7 +569,7 @@ namespace Avalonia.Controls
         /// <summary>
         /// DataGridRowGroupHeader associated with this instance
         /// </summary>
-        public DataGridRowGroupHeader RowGroupHeader
+        internal DataGridRowGroupHeader RowGroupHeader
         {
             get;
             private set;

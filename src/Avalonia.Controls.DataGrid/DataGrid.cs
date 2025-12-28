@@ -828,14 +828,14 @@ namespace Avalonia.Controls
         }
 
 
-        public static readonly DirectProperty<DataGrid, IDataGridCollectionView> CollectionViewProperty =
+    internal static readonly DirectProperty<DataGrid, IDataGridCollectionView> CollectionViewProperty =
             AvaloniaProperty.RegisterDirect<DataGrid, IDataGridCollectionView>(nameof(CollectionView),
                 o => o.CollectionView);
 
         /// <summary>
         /// Gets current <see cref="IDataGridCollectionView"/>.
         /// </summary>
-        public IDataGridCollectionView CollectionView =>
+    internal IDataGridCollectionView CollectionView =>
             DataConnection.CollectionView;
 
         /// <summary>
@@ -3682,7 +3682,7 @@ namespace Avalonia.Controls
         /// <summary>
         /// Performs a hit test and returns the DataGridCell and related info at the given point (relative to the grid).
         /// </summary>
-        public DataGridCellHitTestResult HitTestCell(Point point)
+    internal DataGridCellHitTestResult HitTestCell(Point point)
         {
             var hit = this.GetVisualAt(point);
             if (hit == null)
@@ -6478,7 +6478,7 @@ namespace Avalonia.Controls
         /// Raises the LoadingRowGroup event
         /// </summary>
         /// <param name="e">EventArgs</param>
-        protected virtual void OnLoadingRowGroup(DataGridRowGroupHeaderEventArgs e)
+    internal virtual void OnLoadingRowGroup(DataGridRowGroupHeaderEventArgs e)
         {
             EventHandler<DataGridRowGroupHeaderEventArgs> handler = LoadingRowGroup;
             if (handler != null)
@@ -6493,7 +6493,7 @@ namespace Avalonia.Controls
         /// Raises the UnLoadingRowGroup event
         /// </summary>
         /// <param name="e">EventArgs</param>
-        protected virtual void OnUnloadingRowGroup(DataGridRowGroupHeaderEventArgs e)
+    internal virtual void OnUnloadingRowGroup(DataGridRowGroupHeaderEventArgs e)
         {
             EventHandler<DataGridRowGroupHeaderEventArgs> handler = UnloadingRowGroup;
             if (handler != null)
@@ -6507,12 +6507,12 @@ namespace Avalonia.Controls
         /// <summary>
         /// Occurs before a DataGridRowGroupHeader header is used.
         /// </summary>
-        public event EventHandler<DataGridRowGroupHeaderEventArgs> LoadingRowGroup;
+    internal event EventHandler<DataGridRowGroupHeaderEventArgs> LoadingRowGroup;
 
         /// <summary>
         /// Occurs when the DataGridRowGroupHeader is available for reuse.
         /// </summary>
-        public event EventHandler<DataGridRowGroupHeaderEventArgs> UnloadingRowGroup;
+    internal event EventHandler<DataGridRowGroupHeaderEventArgs> UnloadingRowGroup;
 
         // Recursively expands parent RowGroupHeaders from the top down
         private void ExpandRowGroupParentChain(int level, int slot)

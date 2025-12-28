@@ -24,10 +24,7 @@ namespace Avalonia.Controls
     [TemplatePart(DataGridRow.DATAGRIDROW_elementRoot,        typeof(Panel))]
     [TemplatePart(DataGridRow.DATAGRIDROW_elementRowHeader,   typeof(DataGridRowHeader))]
     [PseudoClasses(":pressed", ":current", ":expanded")]
-#if !DATAGRID_INTERNAL
-    public
-#endif
-    class DataGridRowGroupHeader : TemplatedControl
+    internal class DataGridRowGroupHeader : TemplatedControl
     {
         private const string DATAGRIDROWGROUPHEADER_expanderButton = "PART_ExpanderButton";
         private const string DATAGRIDROWGROUPHEADER_indentSpacer = "PART_IndentSpacer";
@@ -132,7 +129,7 @@ namespace Avalonia.Controls
         /// <summary>
         /// Constructs a DataGridRowGroupHeader
         /// </summary>
-        public DataGridRowGroupHeader()
+    public DataGridRowGroupHeader()
         {
             AddHandler(InputElement.PointerPressedEvent, (s, e) => DataGridRowGroupHeader_PointerPressed(e), handledEventsToo: true);
         }

@@ -165,7 +165,7 @@ namespace Avalonia.Controls
             }
         }
 
-        public IDataGridCollectionView CollectionView
+    internal IDataGridCollectionView CollectionView
         {
             get
             {
@@ -180,7 +180,7 @@ namespace Avalonia.Controls
             }
         }
 
-        public DataGridSortDescriptionCollection SortDescriptions
+    internal DataGridSortDescriptionCollection SortDescriptions
         {
             get
             {

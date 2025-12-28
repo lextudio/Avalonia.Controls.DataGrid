@@ -49,16 +49,12 @@ namespace Avalonia.Collections
     }
 
     /// <summary>Defines a method that enables a collection to provide a custom view for specialized sorting, filtering, grouping, and currency.</summary>
-#if !DATAGRID_INTERNAL
-    public
-#endif
-    interface IDataGridCollectionViewFactory
+    internal interface IDataGridCollectionViewFactory
     {
         /// <summary>Returns a custom view for specialized sorting, filtering, grouping, and currency.</summary>
         /// <returns>A custom view for specialized sorting, filtering, grouping, and currency.</returns>
         IDataGridCollectionView CreateView();
     }
-
     /// <summary>
     /// DataGrid-readable view over an IEnumerable.
     /// </summary>

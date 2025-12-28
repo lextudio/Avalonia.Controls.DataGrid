@@ -5,7 +5,7 @@ namespace Avalonia.Controls
     /// <summary>
     /// Result of a cell hit test on a DataGrid.
     /// </summary>
-    public readonly struct DataGridCellHitTestResult
+    internal readonly struct DataGridCellHitTestResult
     {
         public DataGridCellHitTestResult(DataGridCell cell, object item, DataGridColumn column)
         {

@@ -10,10 +10,7 @@ using Avalonia.Controls.Utils;
 
 namespace Avalonia.Collections
 {
-#if !DATAGRID_INTERNAL
-    public
-#endif
-    abstract class DataGridSortDescription
+    internal abstract class DataGridSortDescription
     {
         public virtual string PropertyPath => null;
 
@@ -276,26 +273,23 @@ namespace Avalonia.Collections
             }
         }
 
-        public static DataGridSortDescription FromPath(string propertyPath, ListSortDirection direction = ListSortDirection.Ascending, CultureInfo culture = null)
+    internal static DataGridSortDescription FromPath(string propertyPath, ListSortDirection direction = ListSortDirection.Ascending, CultureInfo culture = null)
         {
             return new DataGridPathSortDescription(propertyPath, direction, null, culture);
         }
 
-        public static DataGridSortDescription FromPath(string propertyPath, ListSortDirection direction, IComparer comparer)
+    internal static DataGridSortDescription FromPath(string propertyPath, ListSortDirection direction, IComparer comparer)
         {
             return new DataGridPathSortDescription(propertyPath, direction, comparer, null);
         }
 
-        public static DataGridSortDescription FromComparer(IComparer comparer, ListSortDirection direction = ListSortDirection.Ascending)
+    internal static DataGridSortDescription FromComparer(IComparer comparer, ListSortDirection direction = ListSortDirection.Ascending)
         {
             return new DataGridComparerSortDescription(comparer, direction);
         }
     }
 
-#if !DATAGRID_INTERNAL
-    public
-#endif
-    class DataGridComparerSortDescription : DataGridSortDescription
+    internal class DataGridComparerSortDescription : DataGridSortDescription
     {
         private readonly IComparer _innerComparer;
         private readonly ListSortDirection _direction;
@@ -327,9 +321,6 @@ namespace Avalonia.Collections
         }
     }
 
-#if !DATAGRID_INTERNAL
-    public
-#endif
-    class DataGridSortDescriptionCollection : AvaloniaList<DataGridSortDescription>
+    internal class DataGridSortDescriptionCollection : AvaloniaList<DataGridSortDescription>
     { }
 }

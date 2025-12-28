@@ -12,10 +12,7 @@ namespace Avalonia.Controls.Primitives
     /// <summary>
     /// Represents a non-scrollable grid that contains <see cref="T:Avalonia.Controls.DataGrid" /> row headers.
     /// </summary>
-#if !DATAGRID_INTERNAL
-    public
-#endif
-    class DataGridFrozenGrid : Grid
+    internal class DataGridFrozenGrid : Grid
     {
         public static readonly StyledProperty<bool> IsFrozenProperty =
             AvaloniaProperty.RegisterAttached<DataGridFrozenGrid, Control, bool>("IsFrozen");
