@@ -22,10 +22,10 @@ using Avalonia.Utilities;
 namespace Avalonia.Collections
 {
 #if !DATAGRID_INTERNAL
-    public
+    // public
 #endif
 
-    abstract class DataGridGroupDescription : INotifyPropertyChanged
+    internal abstract class DataGridGroupDescription : INotifyPropertyChanged
     {
         public AvaloniaList<object> GroupKeys { get; }
 
@@ -62,9 +62,9 @@ namespace Avalonia.Collections
     }
 
 #if !DATAGRID_INTERNAL
-    public
+    // public
 #endif
-    class DataGridPathGroupDescription : DataGridGroupDescription
+    internal class DataGridPathGroupDescription : DataGridGroupDescription
     {
         private string _propertyPath;
         private Type _propertyType;
@@ -128,9 +128,9 @@ namespace Avalonia.Collections
     }
 
 #if !DATAGRID_INTERNAL
-    public
+    // public
 #endif
-    abstract class DataGridCollectionViewGroup : INotifyPropertyChanged
+    internal abstract class DataGridCollectionViewGroup : INotifyPropertyChanged
     {
         private int _itemCount;
 

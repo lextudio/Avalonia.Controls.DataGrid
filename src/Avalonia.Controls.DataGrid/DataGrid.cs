@@ -6457,7 +6457,7 @@ namespace Avalonia.Controls
         /// <param name="item">item</param>
         /// <param name="groupLevel">groupLevel</param>
         /// <returns>The group the given item falls under or null if the item is not in the ItemsSource</returns>
-        public DataGridCollectionViewGroup GetGroupFromItem(object item, int groupLevel)
+    internal DataGridCollectionViewGroup GetGroupFromItem(object item, int groupLevel)
         {
             int itemIndex = DataConnection.IndexOf(item);
             if (itemIndex == -1)

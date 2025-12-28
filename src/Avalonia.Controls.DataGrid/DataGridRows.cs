@@ -2883,7 +2883,7 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="collectionViewGroup">CollectionViewGroup</param>
         /// <param name="collapseAllSubgroups">Set to true to collapse all Subgroups</param>
-        public void CollapseRowGroup(DataGridCollectionViewGroup collectionViewGroup, bool collapseAllSubgroups)
+    internal void CollapseRowGroup(DataGridCollectionViewGroup collectionViewGroup, bool collapseAllSubgroups)
         {
             if (WaitForLostFocus(delegate { CollapseRowGroup(collectionViewGroup, collapseAllSubgroups); }) ||
                 collectionViewGroup == null || !CommitEdit())
@@ -2910,7 +2910,7 @@ namespace Avalonia.Controls
         /// </summary>
         /// <param name="collectionViewGroup">CollectionViewGroup</param>
         /// <param name="expandAllSubgroups">Set to true to expand all Subgroups</param>
-        public void ExpandRowGroup(DataGridCollectionViewGroup collectionViewGroup, bool expandAllSubgroups)
+    internal void ExpandRowGroup(DataGridCollectionViewGroup collectionViewGroup, bool expandAllSubgroups)
         {
             if (WaitForLostFocus(delegate { ExpandRowGroup(collectionViewGroup, expandAllSubgroups); }) ||
                 collectionViewGroup == null || !CommitEdit())

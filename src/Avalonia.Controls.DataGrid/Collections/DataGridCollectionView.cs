@@ -63,9 +63,9 @@ namespace Avalonia.Collections
     /// DataGrid-readable view over an IEnumerable.
     /// </summary>
 #if !DATAGRID_INTERNAL
-    public
+    // public
 #endif
-    sealed class DataGridCollectionView : IDataGridCollectionView, IDataGridEditableCollectionView, IList, INotifyPropertyChanged
+    internal sealed class DataGridCollectionView : IDataGridCollectionView, IDataGridEditableCollectionView, IList, INotifyPropertyChanged
     {
         /// <summary>
         /// Since there's nothing in the un-cancelable event args that is mutable,
