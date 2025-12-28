@@ -50,7 +50,7 @@ namespace DataGridExtensions
     }
 
     // Placeholder factories for compatibility; no-op in Avalonia shim.
-    internal sealed class RegexContentFilterFactory
+    public sealed class RegexContentFilterFactory
     {
     }
 
