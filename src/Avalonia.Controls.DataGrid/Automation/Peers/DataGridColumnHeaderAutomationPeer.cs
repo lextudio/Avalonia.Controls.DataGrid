@@ -2,10 +2,7 @@ using Avalonia.Automation.Peers;
 
 namespace Avalonia.Controls.Automation.Peers;
 
-#if !DATAGRID_INTERNAL
-public
-#endif
-class DataGridColumnHeaderAutomationPeer : ContentControlAutomationPeer
+internal class DataGridColumnHeaderAutomationPeer : ContentControlAutomationPeer
 {
     public DataGridColumnHeaderAutomationPeer(DataGridColumnHeader owner)
         : base(owner)

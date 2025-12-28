@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace Avalonia.Controls
 {
-    public class StringNotEmptyToVisibleConverter : IValueConverter
+    internal class StringNotEmptyToVisibleConverter : IValueConverter
     {
         public static readonly StringNotEmptyToVisibleConverter Default = new StringNotEmptyToVisibleConverter();
 

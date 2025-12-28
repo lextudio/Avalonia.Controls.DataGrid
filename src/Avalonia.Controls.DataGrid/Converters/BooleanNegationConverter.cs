@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace Avalonia.Controls
 {
-    public class BooleanNegationConverter : IValueConverter
+    internal class BooleanNegationConverter : IValueConverter
     {
         public static readonly BooleanNegationConverter Default = new BooleanNegationConverter();
 

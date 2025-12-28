@@ -3,10 +3,7 @@ using Avalonia.Controls.Primitives;
 
 namespace Avalonia.Controls.Automation.Peers;
 
-#if !DATAGRID_INTERNAL
-public
-#endif
-class DataGridDetailsPresenterAutomationPeer : ControlAutomationPeer
+internal class DataGridDetailsPresenterAutomationPeer : ControlAutomationPeer
 {
     public DataGridDetailsPresenterAutomationPeer(DataGridDetailsPresenter owner)
         : base(owner)
