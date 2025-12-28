@@ -8,7 +8,7 @@ using Avalonia.Markup.Xaml.Templates;
 // Minimal shims for WPF DataGridExtensions API used by ILSpy. Not a full implementation.
 namespace DataGridExtensions
 {
-    internal static class DataGridFilter
+    public static class DataGridFilter
     {
         public static readonly AttachedProperty<bool> IsAutoFilterEnabledProperty =
             AvaloniaProperty.RegisterAttached<DataGrid, bool>("IsAutoFilterEnabled", typeof(DataGridFilter), false);
@@ -54,12 +54,12 @@ namespace DataGridExtensions
     {
     }
 
-    internal static class DataGridColumnExtensions
+    public static class DataGridFilterColumn
     {
         /// <summary>
         /// WPF DataGridExtensions helper: assign a filter control template to a column.
         /// </summary>
-    internal static void SetTemplate(this DataGridColumn column, object? template)
+        public static void SetTemplate(this DataGridColumn column, object? template)
         {
             switch (template)
             {
