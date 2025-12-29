@@ -150,6 +150,7 @@ namespace Avalonia.Controls
         private object _previousCurrentItem;
         private double[] _rowGroupHeightsByLevel;
         private double _rowHeaderDesiredWidth;
+        private Style _cellStyleInstance;
         private Size? _rowsPresenterAvailableSize;
         private bool _scrollingByHeight;
         private IndexToValueTable<bool> _showDetailsTable;
@@ -949,14 +950,27 @@ namespace Avalonia.Controls
 
         private void OnCellStyleChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            if (e.NewValue is Style style)
+            if (_cellStyleInstance != null)
             {
-                // Apply cell style by adding it to the grid's Styles collection
-                if (Styles.Remove(style))
-                {
-                    Styles.Add(style);
-                }
+                Styles.Remove(_cellStyleInstance);
+                _cellStyleInstance = null;
             }
+
+            if (e.NewValue is Style newStyle)
+            {
+                _cellStyleInstance = CloneStyle(newStyle);
+                Styles.Add(_cellStyleInstance);
+            }
+        }
+
+        private static Style CloneStyle(Style style)
+        {
+            var clone = new Style(_ => style.Selector!);
+            foreach (var setter in style.Setters)
+            {
+                clone.Setters.Add(setter);
+            }
+            return clone;
         }
 
         private void OnRowDetailsTemplateSelectorChanged(AvaloniaPropertyChangedEventArgs e)
