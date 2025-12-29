@@ -24,6 +24,7 @@ using System.Text;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Avalonia.Input.Platform;
 using System.ComponentModel.DataAnnotations;
 using Avalonia.Markup.Xaml.MarkupExtensions;
@@ -153,6 +154,8 @@ namespace Avalonia.Controls
         private Style _cellStyleInstance;
         private Size? _rowsPresenterAvailableSize;
         private bool _scrollingByHeight;
+        private static int s_scrollLogId;
+        private readonly int _scrollLogId;
         private IndexToValueTable<bool> _showDetailsTable;
         private bool _successfullyUpdatedSelection;
         private DataGridSelectedItemsCollection _selectedItems;
@@ -174,8 +177,10 @@ namespace Avalonia.Controls
 
         internal void LogScroll(string message)
         {
-            ScrollDiagnosticsLog?.Invoke(message);
+            ScrollDiagnosticsLog?.Invoke($"{ScrollLogPrefix} {message}");
         }
+
+        private string ScrollLogPrefix => string.IsNullOrWhiteSpace(Name) ? $"DG{_scrollLogId}" : $"DG{_scrollLogId}:{Name}";
 
         /// <summary>
         /// Identifies the CanUserReorderColumns dependency property.
@@ -897,6 +902,7 @@ namespace Avalonia.Controls
         /// </summary>
         public DataGrid()
         {
+            _scrollLogId = Interlocked.Increment(ref s_scrollLogId);
             KeyDown += DataGrid_KeyDown;
             KeyUp += DataGrid_KeyUp;
 

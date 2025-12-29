@@ -3072,7 +3072,12 @@ namespace Avalonia.Controls
             detailsContent.DataContext = dataItem;
             _rowsPresenter.Children.Add(detailsContent);
             detailsContent.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            RowDetailsHeightEstimate = detailsContent.DesiredSize.Height;
+            double detailsHeight = detailsContent.DesiredSize.Height;
+            if (!double.IsNaN(RowHeight) && detailsHeight < RowHeight)
+            {
+                detailsHeight = RowHeight;
+            }
+            RowDetailsHeightEstimate = detailsHeight;
             _rowsPresenter.Children.Remove(detailsContent);
             if (ScrollDiagnosticsLog != null)
             {
@@ -3104,13 +3109,19 @@ namespace Avalonia.Controls
             if (double.IsNaN(height) || height <= 0)
                 return;
 
-            if (height > RowDetailsHeightEstimate)
+            double clampedHeight = height;
+            if (!double.IsNaN(RowHeight) && clampedHeight < RowHeight)
+            {
+                clampedHeight = RowHeight;
+            }
+
+            if (clampedHeight > RowDetailsHeightEstimate)
             {
                 if (ScrollDiagnosticsLog != null)
                 {
-                    LogScroll($"details estimate update={RowDetailsHeightEstimate:0.###}->{height:0.###} rowHeight={RowHeightEstimate:0.###} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot}");
+                    LogScroll($"details estimate update={RowDetailsHeightEstimate:0.###}->{clampedHeight:0.###} rowHeight={RowHeightEstimate:0.###} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot}");
                 }
-                RowDetailsHeightEstimate = height;
+                RowDetailsHeightEstimate = clampedHeight;
                 InvalidateRowsMeasure(invalidateIndividualElements: false);
                 InvalidateMeasure();
             }
