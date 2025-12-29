@@ -72,6 +72,11 @@ namespace Avalonia.Controls
             set;
         }
 
+        /// <summary>
+        /// Public accessor to the owning column (matches WPF API).
+        /// </summary>
+        public DataGridColumn? Column => OwningColumn;
+
         internal DataGrid OwningGrid
         {
             get { return OwningRow?.OwningGrid ?? OwningColumn?.OwningGrid; }

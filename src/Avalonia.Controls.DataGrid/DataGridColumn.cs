@@ -662,6 +662,16 @@ namespace Avalonia.Controls
             return content;
         }
 
+        /// <summary>
+        /// Returns the content to place on the clipboard for the given item. Mirrors WPF API used by ILSpy.
+        /// </summary>
+        /// <param name="item">The row item.</param>
+        /// <returns>Clipboard-ready cell content.</returns>
+        public virtual object OnCopyingCellClipboardContent(object item)
+        {
+            return GetCellValue(item, ClipboardContentBinding);
+        }
+
         public Control GetCellContent(DataGridRow dataGridRow)
         {
             dataGridRow = dataGridRow ?? throw new ArgumentNullException(nameof(dataGridRow));

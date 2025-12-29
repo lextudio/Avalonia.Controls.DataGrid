@@ -1901,6 +1901,11 @@ namespace Avalonia.Controls
             private set;
         }
 
+        /// <summary>
+        /// Public current cell info (item + column), matching WPF DataGrid API.
+        /// </summary>
+        public DataGridCellInfo CurrentCell => new DataGridCellInfo(CurrentItem, CurrentColumn);
+
         internal int CurrentColumnIndex
         {
             get
