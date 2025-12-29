@@ -270,8 +270,10 @@ namespace Avalonia.Controls
         private void UpdateFilterTemplateVisibility()
         {
             bool filtersEnabled = _owningDataGrid?.EnableColumnFilters ?? true;
+            var column = OwningColumn;
 
-            if (!filtersEnabled)
+            // Do not show filter UI on the filler column or when filters are disabled.
+            if (!filtersEnabled || column is DataGridFillerColumn)
             {
                 if (_filterArea != null)
                 {
