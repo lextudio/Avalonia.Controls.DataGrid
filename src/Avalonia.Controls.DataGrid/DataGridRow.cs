@@ -412,6 +412,23 @@ namespace Avalonia.Controls
             private set;
         }
 
+        internal double ActualDetailsHeight
+        {
+            get
+            {
+                if (_detailsElement != null && _appliedDetailsVisibility == true && _appliedDetailsTemplate != null)
+                {
+                    var height = _detailsElement.ContentHeight;
+                    if ((double.IsNaN(height) || height <= 1) && !double.IsNaN(_detailsDesiredHeight))
+                    {
+                        height = _detailsDesiredHeight;
+                    }
+                    return double.IsNaN(height) ? 0 : height;
+                }
+                return 0;
+            }
+        }
+
         internal int Slot
         {
             get;
@@ -893,6 +910,15 @@ namespace Avalonia.Controls
 
                 _detailsContent.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 _detailsDesiredHeight = _detailsContent.DesiredSize.Height;
+                if ((_detailsDesiredHeight <= 1 || double.IsNaN(_detailsDesiredHeight)) &&
+                    OwningGrid.RowDetailsHeightEstimate > 0)
+                {
+                    if (OwningGrid.LogScrollEnabled)
+                    {
+                        OwningGrid.LogScroll($"details desired fallback slot={Slot} desired={_detailsContent.DesiredSize.Height:0.###} estimate={OwningGrid.RowDetailsHeightEstimate:0.###}");
+                    }
+                    _detailsDesiredHeight = OwningGrid.RowDetailsHeightEstimate;
+                }
             }
             else
             {
@@ -919,6 +945,7 @@ namespace Avalonia.Controls
                         _detailsDesiredHeight = newValue;
 
                         _detailsElement.ContentHeight = newValue;
+                        OwningGrid?.UpdateRowDetailsHeightEstimate(newValue);
 
                         // Calling this when details are not visible invalidates during layout when we have no work
                         // to do.  In certain scenarios, this could cause a layout cycle
@@ -988,6 +1015,15 @@ namespace Avalonia.Controls
 
                 if (AreDetailsVisible)
                 {
+                    if ((_detailsDesiredHeight <= 1 || double.IsNaN(_detailsDesiredHeight)) &&
+                        OwningGrid.RowDetailsHeightEstimate > 0)
+                    {
+                        if (OwningGrid.LogScrollEnabled)
+                        {
+                            OwningGrid.LogScroll($"details height fallback slot={Slot} desired={_detailsDesiredHeight:0.###} estimate={OwningGrid.RowDetailsHeightEstimate:0.###}");
+                        }
+                        _detailsDesiredHeight = OwningGrid.RowDetailsHeightEstimate;
+                    }
                     // Set the details height directly
                     _detailsElement.ContentHeight = _detailsDesiredHeight;
                     _checkDetailsContentHeight = true;

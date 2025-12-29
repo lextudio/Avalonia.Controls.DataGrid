@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using Avalonia.Data;
 using Avalonia.Styling;
+using Avalonia.Controls.Templates;
 
 namespace Avalonia.Controls
 {
@@ -84,6 +85,9 @@ namespace Avalonia.Controls
 
                 // Height of all rows above the viewport
                 double totalRowsHeight = _verticalOffset - NegVerticalOffset;
+                int detailsCountInView = 0;
+                double detailsHeightInView = 0;
+                bool rowHeightFixed = !double.IsNaN(RowHeight);
 
                 // Add the height of all the rows currently displayed, AvailableRowRoom
                 // is not always up to date enough for this
@@ -92,6 +96,20 @@ namespace Avalonia.Controls
                     if (element is DataGridRow row)
                     {
                         totalRowsHeight += row.TargetHeight;
+                        if (row.AreDetailsVisible)
+                        {
+                            detailsCountInView++;
+                            double detailsHeight = row.ActualDetailsHeight;
+                            if (detailsHeight <= 1 && RowDetailsHeightEstimate > 0)
+                            {
+                                detailsHeight = RowDetailsHeightEstimate;
+                                if (LogScrollEnabled)
+                                {
+                                    LogScroll($"details fallback slot={row.Slot} actual={row.ActualDetailsHeight:0.###} estimate={RowDetailsHeightEstimate:0.###}");
+                                }
+                            }
+                            detailsHeightInView += detailsHeight;
+                        }
                     }
                     else
                     {
@@ -102,11 +120,19 @@ namespace Avalonia.Controls
                 // Details up to and including viewport
                 int detailsCount = GetDetailsCountInclusive(0, DisplayData.LastScrollingSlot);
 
-                // Subtract details that were accounted for from the totalRowsHeight
-                totalRowsHeight -= detailsCount * RowDetailsHeightEstimate;
+                // Subtract details for rows outside the viewport using the estimate,
+                // and use actual details height for rows in view.
+                int detailsCountOutsideView = Math.Max(0, detailsCount - detailsCountInView);
+                totalRowsHeight -= detailsCountOutsideView * RowDetailsHeightEstimate;
+                totalRowsHeight -= detailsHeightInView;
 
                 // Update the RowHeightEstimate if we have more row information
-                if (DisplayData.LastScrollingSlot >= _lastEstimatedRow)
+                if (rowHeightFixed)
+                {
+                    _lastEstimatedRow = Math.Max(_lastEstimatedRow, DisplayData.LastScrollingSlot);
+                    RowHeightEstimate = RowHeight;
+                }
+                else if (DisplayData.LastScrollingSlot >= _lastEstimatedRow)
                 {
                     _lastEstimatedRow = DisplayData.LastScrollingSlot;
                     RowHeightEstimate = totalRowsHeight / (_lastEstimatedRow + 1 - _collapsedSlotsTable.GetIndexCount(0, _lastEstimatedRow));
@@ -126,6 +152,11 @@ namespace Avalonia.Controls
 
                 //
                 double totalDetailsHeight = detailsCount * RowDetailsHeightEstimate;
+
+                if (LogScrollEnabled)
+                {
+                    LogScroll($"vscroll total rows={totalRowsHeight:0.###} details={totalDetailsHeight:0.###} detailsInView={detailsCountInView}/{detailsCount} detailsOut={detailsCountOutsideView} detailsHeightInView={detailsHeightInView:0.###} rowHeight={RowHeightEstimate:0.###} fixedRowHeight={rowHeightFixed} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot}");
+                }
 
                 return totalRowsHeight + totalDetailsHeight;
             }
@@ -420,6 +451,10 @@ namespace Avalonia.Controls
         internal bool ScrollSlotIntoView(int slot, bool scrolledHorizontally)
         {
             Debug.Assert(_collapsedSlotsTable.Contains(slot) || !IsSlotOutOfBounds(slot));
+            if (ScrollDiagnosticsLog != null)
+            {
+                LogScroll($"scrollslot start slot={slot} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot} neg={NegVerticalOffset:0.###} available={AvailableSlotElementRoom:0.###}");
+            }
 
             if (scrolledHorizontally && DisplayData.FirstScrollingSlot <= slot && DisplayData.LastScrollingSlot >= slot)
             {
@@ -436,6 +471,10 @@ namespace Avalonia.Controls
             if (DisplayData.FirstScrollingSlot < slot && (DisplayData.LastScrollingSlot > slot || DisplayData.LastScrollingSlot == -1))
             {
                 // The row is already displayed in its entirety
+                if (ScrollDiagnosticsLog != null)
+                {
+                    LogScroll($"scrollslot already visible slot={slot} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot}");
+                }
                 return true;
             }
             else if (DisplayData.FirstScrollingSlot == slot && slot != -1)
@@ -445,6 +484,10 @@ namespace Avalonia.Controls
                     // First displayed row is partially scrolled of. Let's scroll it so that NegVerticalOffset becomes 0.
                     DisplayData.PendingVerticalScrollHeight = -NegVerticalOffset;
                     InvalidateRowsMeasure(false /*invalidateIndividualRows*/);
+                }
+                if (ScrollDiagnosticsLog != null)
+                {
+                    LogScroll($"scrollslot aligned slot={slot} pending={DisplayData.PendingVerticalScrollHeight:0.###} neg={NegVerticalOffset:0.###}");
                 }
                 return true;
             }
@@ -533,6 +576,10 @@ namespace Avalonia.Controls
 
             InvalidateMeasure();
             InvalidateRowsMeasure(false /*invalidateIndividualRows*/);
+            if (ScrollDiagnosticsLog != null)
+            {
+                LogScroll($"scrollslot delta={deltaY:0.###} pending={DisplayData.PendingVerticalScrollHeight:0.###} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot} neg={NegVerticalOffset:0.###}");
+            }
 
             return true;
         }
@@ -2970,20 +3017,66 @@ namespace Avalonia.Controls
 
         private void UpdateRowDetailsHeightEstimate()
         {
-            if (_rowsPresenter != null && _measured && RowDetailsTemplate != null)
+            if (_rowsPresenter == null || !_measured)
             {
-                object dataItem = null;
-                if(VisibleSlotCount > 0)
-                    dataItem = DataConnection.GetDataItem(0);
-                var detailsContent = RowDetailsTemplate.Build(dataItem);
-                if (detailsContent != null)
+                RowDetailsHeightEstimate = 0;
+                return;
+            }
+
+            if (RowDetailsTemplate == null && RowDetailsTemplateSelector == null)
+            {
+                RowDetailsHeightEstimate = 0;
+                return;
+            }
+
+            object dataItem = null;
+            IDataTemplate detailsTemplate = null;
+            int count = DataConnection?.Count ?? 0;
+            int maxSearch = Math.Min(count, 50);
+
+            for (int i = 0; i < maxSearch; i++)
+            {
+                if (!GetRowDetailsVisibility(i))
+                    continue;
+
+                dataItem = DataConnection.GetDataItem(i);
+                detailsTemplate = GetRowDetailsTemplateForItem(dataItem, RowDetailsTemplate);
+                if (detailsTemplate != null)
+                    break;
+            }
+
+            if (detailsTemplate == null)
+            {
+                for (int i = 0; i < maxSearch; i++)
                 {
-                    detailsContent.DataContext = dataItem;
-                    _rowsPresenter.Children.Add(detailsContent);
-                    detailsContent.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                    RowDetailsHeightEstimate = detailsContent.DesiredSize.Height;
-                    _rowsPresenter.Children.Remove(detailsContent);
+                    dataItem = DataConnection.GetDataItem(i);
+                    detailsTemplate = GetRowDetailsTemplateForItem(dataItem, RowDetailsTemplate);
+                    if (detailsTemplate != null)
+                        break;
                 }
+            }
+
+            if (detailsTemplate == null)
+            {
+                RowDetailsHeightEstimate = 0;
+                return;
+            }
+
+            var detailsContent = detailsTemplate.Build(dataItem);
+            if (detailsContent == null)
+            {
+                RowDetailsHeightEstimate = 0;
+                return;
+            }
+
+            detailsContent.DataContext = dataItem;
+            _rowsPresenter.Children.Add(detailsContent);
+            detailsContent.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            RowDetailsHeightEstimate = detailsContent.DesiredSize.Height;
+            _rowsPresenter.Children.Remove(detailsContent);
+            if (ScrollDiagnosticsLog != null)
+            {
+                LogScroll($"details estimate init={RowDetailsHeightEstimate:0.###} rowHeight={RowHeightEstimate:0.###} visibleSlots={VisibleSlotCount} firstSlot={DisplayData.FirstScrollingSlot}");
             }
         }
 
@@ -3004,6 +3097,23 @@ namespace Avalonia.Controls
             Debug.Assert(rowIndex >= 0 && rowIndex < SlotCount);
 
             _showDetailsTable.AddValue(rowIndex, isVisible);
+        }
+
+        internal void UpdateRowDetailsHeightEstimate(double height)
+        {
+            if (double.IsNaN(height) || height <= 0)
+                return;
+
+            if (height > RowDetailsHeightEstimate)
+            {
+                if (ScrollDiagnosticsLog != null)
+                {
+                    LogScroll($"details estimate update={RowDetailsHeightEstimate:0.###}->{height:0.###} rowHeight={RowHeightEstimate:0.###} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot}");
+                }
+                RowDetailsHeightEstimate = height;
+                InvalidateRowsMeasure(invalidateIndividualElements: false);
+                InvalidateMeasure();
+            }
         }
 
         internal bool GetRowDetailsVisibility(int rowIndex)

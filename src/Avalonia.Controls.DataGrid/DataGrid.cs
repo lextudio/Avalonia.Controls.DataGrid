@@ -168,6 +168,15 @@ namespace Avalonia.Controls
         public event EventHandler<ScrollEventArgs> HorizontalScroll;
         public event EventHandler<ScrollEventArgs> VerticalScroll;
 
+        public static Action<string>? ScrollDiagnosticsLog { get; set; }
+
+        internal bool LogScrollEnabled => ScrollDiagnosticsLog != null;
+
+        internal void LogScroll(string message)
+        {
+            ScrollDiagnosticsLog?.Invoke(message);
+        }
+
         /// <summary>
         /// Identifies the CanUserReorderColumns dependency property.
         /// </summary>
@@ -2733,9 +2742,13 @@ namespace Avalonia.Controls
                 {
                     DisplayData.PendingVerticalScrollHeight = scrollHeight;
                     handled = true;
-                    
+
                     var eventType = scrollHeight > 0 ? ScrollEventType.SmallIncrement : ScrollEventType.SmallDecrement;
                     VerticalScroll?.Invoke(this, new ScrollEventArgs(eventType, scrollHeight));
+                    if (ScrollDiagnosticsLog != null)
+                    {
+                        LogScroll($"vscroll delta={scrollHeight:0.###} offset={_verticalOffset:0.###} neg={NegVerticalOffset:0.###} pending={DisplayData.PendingVerticalScrollHeight:0.###} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot} rowHeight={RowHeightEstimate:0.###} detailsHeight={RowDetailsHeightEstimate:0.###}");
+                    }
                 }
 
                 // Horizontal scroll handling
@@ -2761,6 +2774,10 @@ namespace Avalonia.Controls
                         
                         var eventType = horizontalOffset > 0 ? ScrollEventType.SmallIncrement : ScrollEventType.SmallDecrement;
                         HorizontalScroll?.Invoke(this, new ScrollEventArgs(eventType, horizontalOffset));
+                        if (ScrollDiagnosticsLog != null)
+                        {
+                            LogScroll($"hscroll delta={-delta.X:0.###} offset={HorizontalOffset:0.###} neg={_negHorizontalOffset:0.###} firstCol={DisplayData.FirstDisplayedScrollingCol} lastCol={DisplayData.LastTotallyDisplayedScrollingCol}");
+                        }
                     }
                 }
 
@@ -3302,6 +3319,10 @@ namespace Avalonia.Controls
             try
             {
                 Debug.Assert(_vScrollBar != null);
+                if (ScrollDiagnosticsLog != null)
+                {
+                    LogScroll($"vscroll process event={scrollEventType} value={_vScrollBar.Value:0.###} max={_vScrollBar.Maximum:0.###} offset={_verticalOffset:0.###} neg={NegVerticalOffset:0.###} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot}");
+                }
                 if (scrollEventType == ScrollEventType.SmallIncrement)
                 {
                     DisplayData.PendingVerticalScrollHeight = GetVerticalSmallScrollIncrease();
@@ -3334,6 +3355,10 @@ namespace Avalonia.Controls
 
                 if (!MathUtilities.IsZero(DisplayData.PendingVerticalScrollHeight))
                 {
+                    if (ScrollDiagnosticsLog != null)
+                    {
+                        LogScroll($"vscroll pending={DisplayData.PendingVerticalScrollHeight:0.###} value={_vScrollBar.Value:0.###} max={_vScrollBar.Maximum:0.###}");
+                    }
                     // Invalidate so the scroll happens on idle
                     InvalidateRowsMeasure(invalidateIndividualElements: false);
                 }
@@ -3447,6 +3472,10 @@ namespace Avalonia.Controls
         {
             if (HorizontalOffset != newValue)
             {
+                if (ScrollDiagnosticsLog != null)
+                {
+                    LogScroll($"hscroll offset={HorizontalOffset:0.###}->{newValue:0.###} neg={_negHorizontalOffset:0.###} firstCol={DisplayData.FirstDisplayedScrollingCol} lastCol={DisplayData.LastTotallyDisplayedScrollingCol}");
+                }
                 HorizontalOffset = newValue;
 
                 InvalidateColumnHeadersMeasure();
@@ -3571,6 +3600,11 @@ namespace Avalonia.Controls
             {
                 double cellsHeight = CellsEstimatedHeight;
                 double edgedRowsHeightCalculated = EdgedRowsHeightCalculated;
+                if (ScrollDiagnosticsLog != null)
+                {
+                    var detailsCount = SlotCount > 0 ? GetDetailsCountInclusive(0, SlotCount - 1) : 0;
+                    LogScroll($"vscrollbar request total={edgedRowsHeightCalculated:0.###} cells={cellsHeight:0.###} need={edgedRowsHeightCalculated > cellsHeight} force={VerticalScrollBarVisibility == ScrollBarVisibility.Visible} slots={SlotCount} visibleSlots={VisibleSlotCount} detailsCount={detailsCount} rowHeight={RowHeightEstimate:0.###} detailsHeight={RowDetailsHeightEstimate:0.###}");
+                }
                 UpdateVerticalScrollBar(
                     needVertScrollbar: edgedRowsHeightCalculated > cellsHeight,
                     forceVertScrollbar: VerticalScrollBarVisibility == ScrollBarVisibility.Visible,
@@ -6196,6 +6230,10 @@ namespace Avalonia.Controls
 
         private void SetVerticalOffset(double newVerticalOffset)
         {
+            if (ScrollDiagnosticsLog != null)
+            {
+                LogScroll($"vscroll offset={_verticalOffset:0.###}->{newVerticalOffset:0.###} neg={NegVerticalOffset:0.###} firstSlot={DisplayData.FirstScrollingSlot} lastSlot={DisplayData.LastScrollingSlot} rowHeight={RowHeightEstimate:0.###} detailsHeight={RowDetailsHeightEstimate:0.###}");
+            }
             _verticalOffset = newVerticalOffset;
             if (_vScrollBar != null && !MathUtilities.AreClose(newVerticalOffset, _vScrollBar.Value))
             {
@@ -6338,6 +6376,10 @@ namespace Avalonia.Controls
                         _vScrollBar.Maximum = 0;
                         _vScrollBar.ViewportSize = 0;
                         _vScrollBar.IsEnabled = false;
+                    }
+                    if (ScrollDiagnosticsLog != null)
+                    {
+                        LogScroll($"vscrollbar state max={_vScrollBar.Maximum:0.###} viewport={_vScrollBar.ViewportSize:0.###} value={_vScrollBar.Value:0.###} enabled={_vScrollBar.IsEnabled} visible={_vScrollBar.IsVisible} total={totalVisibleHeight:0.###} cells={cellsHeight:0.###}");
                     }
 
                     if (!_vScrollBar.IsVisible)
