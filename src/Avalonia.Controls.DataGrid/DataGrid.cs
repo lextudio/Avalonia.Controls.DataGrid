@@ -3620,7 +3620,24 @@ namespace Avalonia.Controls
             {
                 bool isVisible = visibility == DataGridRowDetailsVisibilityMode.Visible || visibility == DataGridRowDetailsVisibilityMode.VisibleWhenSelected;
                 row.SetDetailsVisibilityInternal(isVisible, raiseNotification: true, animate: false);
+                return;
             }
+
+            if (DataConnection == null || item == null)
+            {
+                return;
+            }
+
+            var rowIndex = DataConnection.IndexOf(item);
+            if (rowIndex < 0)
+            {
+                return;
+            }
+
+            bool shouldShow = visibility == DataGridRowDetailsVisibilityMode.Visible
+                || visibility == DataGridRowDetailsVisibilityMode.VisibleWhenSelected;
+            OnRowDetailsVisibilityPropertyChanged(rowIndex, shouldShow);
+            OnRowDetailsChanged();
         }
 
         /// <summary>
