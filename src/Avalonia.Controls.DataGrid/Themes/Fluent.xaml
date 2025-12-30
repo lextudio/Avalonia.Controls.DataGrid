@@ -169,7 +169,8 @@
       <Setter Property="SeparatorBrush" Value="{DynamicResource DataGridGridLinesBrush}" />
       <Setter Property="Padding" Value="12,0,0,0" />
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="MinHeight" Value="40" />
       <Setter Property="Template">
         <ControlTemplate>
           <Border x:Name="HeaderBorder"
@@ -423,6 +424,7 @@
 
       <Style Selector="^:pointerover /template/ Rectangle#BackgroundRectangle">
         <Setter Property="Fill" Value="{DynamicResource DataGridRowHoveredBackgroundColor}" />
+        <Setter Property="Opacity" Value="0.9" />
       </Style>
 
       <Style Selector="^:selected">
