@@ -1860,12 +1860,6 @@ namespace Avalonia.Controls
                             {
                                 if (newFirstScrollingSlot > 0)
                                 {
-                                    if (IsSlotVisible(lastScrollingSlot))
-                                    {
-                                        // Make the bottom row available for reuse
-                                        RemoveDisplayedElement(lastScrollingSlot, wasDeleted: false, updateSlotInformation: true);
-                                        lastScrollingSlot = GetPreviousVisibleSlot(lastScrollingSlot);
-                                    }
                                     newFirstScrollingSlot = GetPreviousVisibleSlot(newFirstScrollingSlot);
                                 }
                                 else
@@ -1873,11 +1867,18 @@ namespace Avalonia.Controls
                                     NegVerticalOffset = 0;
                                     break;
                                 }
+                                
                                 double rowHeight = GetExactSlotElementHeight(newFirstScrollingSlot);
                                 double remainingHeight = height - deltaY;
                                 if (MathUtilities.LessThanOrClose(rowHeight + remainingHeight, 0))
                                 {
                                     deltaY -= rowHeight;
+                                    if (IsSlotVisible(lastScrollingSlot))
+                                    {
+                                        // Make the bottom row available for reuse
+                                        RemoveDisplayedElement(lastScrollingSlot, wasDeleted: false, updateSlotInformation: true);
+                                        lastScrollingSlot = GetPreviousVisibleSlot(lastScrollingSlot);
+                                    }
                                 }
                                 else
                                 {
